@@ -4,14 +4,13 @@ import 'package:_89_secondstufff/app/data/services/api_service.dart';
 import 'package:_89_secondstufff/app/routes/app_pages.dart';
 
 class AuthController extends GetxController {
-  final ApiService _apiService = ApiService(); // Harusnya di-inject
-
+  final ApiService _apiService = Get.find<ApiService>();
   final TextEditingController usernameController = TextEditingController(
     text: 'mor_2314',
-  ); // Contoh data valid
+  );
   final TextEditingController passwordController = TextEditingController(
     text: '83r5^_',
-  ); // Contoh data valid
+  );
 
   var isLoading = false.obs;
 
@@ -34,7 +33,6 @@ class AuthController extends GetxController {
 
       isLoading.value = false;
 
-      // Sukses login
       print('Login success, token: ${authToken.token}');
       Get.snackbar(
         'Success',
@@ -42,7 +40,6 @@ class AuthController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
       );
 
-      // Navigasi ke halaman utama (main navigation)
       Get.offAllNamed(AppRoutes.MAIN_NAVIGATION);
     } catch (e) {
       isLoading.value = false;

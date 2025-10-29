@@ -3,13 +3,10 @@ import 'package:_89_secondstufff/app/data/models/product_model.dart';
 import 'package:_89_secondstufff/app/data/services/api_service.dart';
 
 class ProductDetailController extends GetxController {
-  final ApiService apiService;
-  ProductDetailController({required this.apiService});
+  final ApiService apiService = Get.find<ApiService>();
 
-  // Produk yang ditampilkan di halaman ini
   var product = Rx<Product?>(null);
-
-  // Untuk hasil chained request
+  var isLoadingCart = false.obs;
   var chainedProductResult = Rx<Product?>(null);
   var isChainedLoading = false.obs;
   var chainedLog = ''.obs;
@@ -17,16 +14,36 @@ class ProductDetailController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Ambil data produk yang dikirim dari halaman sebelumnya
     product.value = Get.arguments as Product;
   }
 
-  // Fungsi untuk memicu chained request (Async/Await)
+  void addToCart() async {
+    if (product.value == null) return;
+
+    isLoadingCart.value = true;
+    try {
+      await apiService.addToCart(2, product.value!.id, 1);
+
+      Get.snackbar(
+        'Success',
+        '${product.value!.title} ditambahkan ke keranjang!',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Gagal menambahkan ke keranjang: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isLoadingCart.value = false;
+    }
+  }
+
   void runChainedAsync() async {
     isChainedLoading.value = true;
     chainedLog.value = 'Running Async/Await...\n';
     try {
-      // User ID 2 sebagai contoh
       final result = await apiService.fetchFirstProductInCartAsync(2);
       chainedProductResult.value = result;
       chainedLog.value += 'SUCCESS: Fetched ${result?.title ?? 'nothing'}';
@@ -37,20 +54,16 @@ class ProductDetailController extends GetxController {
     }
   }
 
-  // Fungsi untuk memicu chained request (Callback/Then)
   void runChainedCallback() {
     isChainedLoading.value = true;
     chainedLog.value = 'Running Callback/Then...\n';
-    apiService
-        .fetchFirstProductInCartCallback(2)
-        .then((result) {
-          chainedProductResult.value = result;
-          chainedLog.value += 'SUCCESS: Fetched ${result?.title ?? 'nothing'}';
-          isChainedLoading.value = false;
-        })
-        .catchError((e) {
-          chainedLog.value += 'ERROR: $e';
-          isChainedLoading.value = false;
-        });
+    apiService.fetchFirstProductInCartCallback(2).then((result) {
+      chainedProductResult.value = result;
+      chainedLog.value += 'SUCCESS: Fetched ${result?.title ?? 'nothing'}';
+      isChainedLoading.value = false;
+    }).catchError((e) {
+      chainedLog.value += 'ERROR: $e';
+      isChainedLoading.value = false;
+    });
   }
 }

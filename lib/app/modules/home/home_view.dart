@@ -1,15 +1,9 @@
-// --- FIX: Tambahkan 'hide' untuk menghindari konflik ---
 import 'package:flutter/material.dart' hide CarouselController;
 import 'package:get/get.dart';
-// --- FIX: Hapus prefix 'as slider' ---
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-// --- IMPORT BARU ---
 import 'package:_89_secondstufff/app/data/models/product_model.dart';
 import 'package:_89_secondstufff/app/widgets/product_card.dart';
-// --- AKHIR IMPORT ---
-
 import 'package:_89_secondstufff/app/modules/main_navigation/main_navigation_controller.dart';
 import 'package:_89_secondstufff/app/widgets/app_drawer.dart';
 import 'home_controller.dart';

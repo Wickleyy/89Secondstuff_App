@@ -43,12 +43,12 @@ class AppDrawer extends StatelessWidget {
             ),
             decoration: BoxDecoration(color: theme.colorScheme.primary),
           ),
-          // Pilihan Utama
           _buildDrawerItem(
             icon: Icons.shopping_cart_outlined,
             text: 'Cart',
             onTap: () {
-              // Navigasi ke Cart
+              Get.back();
+              Get.toNamed(AppRoutes.CART);
             },
           ),
           _buildDrawerItem(
@@ -82,7 +82,6 @@ class AppDrawer extends StatelessWidget {
 
           Divider(thickness: 1, indent: 16, endIndent: 16),
 
-          // Bagian Others
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(

@@ -14,8 +14,6 @@ class ApiService {
     ),
   );
 
-  // --- API Calls ---
-
   Future<AuthToken> login(String username, String password) async {
     try {
       final response = await _dio.post(
@@ -27,7 +25,6 @@ class ApiService {
       );
       return AuthToken.fromJson(response.data);
     } on DioException catch (e) {
-      // Handle error
       print('Error logging in: $e');
       throw Exception('Failed to login: ${e.message}');
     }
@@ -36,7 +33,6 @@ class ApiService {
   Future<List<String>> getCategories() async {
     try {
       final response = await _dio.get('/products/categories');
-      // API mengembalikan List<dynamic>, kita cast ke List<String>
       return List<String>.from(response.data);
     } on DioException catch (e) {
       print('Error fetching categories: $e');
@@ -66,11 +62,21 @@ class ApiService {
     }
   }
 
+  Future<List<Product>> getAllProducts() async {
+    try {
+      final response = await _dio.get('/products');
+      return (response.data as List)
+          .map((product) => Product.fromJson(product))
+          .toList();
+    } on DioException catch (e) {
+      print('Error fetching all products: $e');
+      throw Exception('Failed to load products');
+    }
+  }
+
   Future<Cart> getCartByUserId(int userId) async {
     try {
-      // Ambil salah satu cart, misal cart user 2
       final response = await _dio.get('/carts/user/$userId');
-      // API ini mengembalikan list, kita ambil yg pertama
       if (response.data.isNotEmpty) {
         return Cart.fromJson(response.data[0]);
       } else {
@@ -82,22 +88,34 @@ class ApiService {
     }
   }
 
-  // --- Chained Request Skenario ---
-  // Skenario: Ambil cart user, lalu ambil detail produk pertama di cart itu.
+  Future<void> addToCart(int userId, int productId, int quantity) async {
+    try {
+      final response = await _dio.post(
+        '/carts',
+        data: {
+          'userId': userId,
+          'date': DateTime.now().toIso8601String(),
+          'products': [
+            {'productId': productId, 'quantity': quantity}
+          ]
+        },
+      );
+      print('Cart simulation response: ${response.data}');
+    } on DioException catch (e) {
+      print('Error adding to cart: $e');
+      throw Exception('Failed to add to cart: ${e.message}');
+    }
+  }
 
-  // 1. Pendekatan Async-Await
   Future<Product?> fetchFirstProductInCartAsync(int userId) async {
     print("--- CHAINED REQUEST (ASYNC/AWAIT) START ---");
     try {
-      // Panggilan pertama: Ambil Cart
       final Cart cart = await getCartByUserId(userId);
       print("Async: 1. Got cart for user $userId");
 
       if (cart.products.isNotEmpty) {
         int firstProductId = cart.products.first.productId;
         print("Async: 2. First product ID is $firstProductId");
-
-        // Panggilan kedua: Ambil Detail Produk
         final Product product = await getProductById(firstProductId);
         print("Async: 3. Got product details: ${product.title}");
         print("--- CHAINED REQUEST (ASYNC/AWAIT) END ---");
@@ -114,36 +132,29 @@ class ApiService {
     }
   }
 
-  // 2. Pendekatan Callback Chaining (.then())
   Future<Product?> fetchFirstProductInCartCallback(int userId) {
     print("--- CHAINED REQUEST (CALLBACK/THEN) START ---");
+    return getCartByUserId(userId).then((cart) {
+      print("Callback: 1. Got cart for user $userId");
 
-    // Panggilan pertama
-    return getCartByUserId(userId)
-        .then((cart) {
-          print("Callback: 1. Got cart for user $userId");
+      if (cart.products.isNotEmpty) {
+        int firstProductId = cart.products.first.productId;
+        print("Callback: 2. First product ID is $firstProductId");
 
-          if (cart.products.isNotEmpty) {
-            int firstProductId = cart.products.first.productId;
-            print("Callback: 2. First product ID is $firstProductId");
-
-            // Panggilan kedua (di-chain)
-            return getProductById(firstProductId).then((product) {
-              print("Callback: 3. Got product details: ${product.title}");
-              print("--- CHAINED REQUEST (CALLBACK/THEN) END ---");
-              return product; // Mengembalikan Product (yang akan dibungkus Future<Product>)
-            });
-          } else {
-            print("Callback: Cart is empty.");
-            print("--- CHAINED REQUEST (CALLBACK/THEN) END ---");
-            // --- FIX: Kembalikan Future<Product?> yang bernilai null ---
-            return Future.value(null);
-          }
-        })
-        .catchError((e) {
-          print("Callback: Error in chained request: $e");
+        return getProductById(firstProductId).then((product) {
+          print("Callback: 3. Got product details: ${product.title}");
           print("--- CHAINED REQUEST (CALLBACK/THEN) END ---");
-          throw Exception('Failed chained request (callback): $e');
+          return product;
         });
+      } else {
+        print("Callback: Cart is empty.");
+        print("--- CHAINED REQUEST (CALLBACK/THEN) END ---");
+        return Future.value(null);
+      }
+    }).catchError((e) {
+      print("Callback: Error in chained request: $e");
+      print("--- CHAINED REQUEST (CALLBACK/THEN) END ---");
+      throw Exception('Failed chained request (callback): $e');
+    });
   }
 }

@@ -7,7 +7,5 @@ class ThemeController extends GetxController {
   void toggleTheme() {
     isDarkMode.value = !isDarkMode.value;
     Get.changeThemeMode(isDarkMode.value ? ThemeMode.dark : ThemeMode.light);
-    // Di aplikasi nyata, Anda mungkin ingin menyimpan preferensi ini
-    // menggunakan GetStorage atau SharedPreferences
   }
 }

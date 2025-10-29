@@ -129,26 +129,23 @@ class ProductDetailView extends GetView<ProductDetailController> {
           );
         }),
       ),
-      // Tombol Add to Cart
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton.icon(
-          icon: Icon(Icons.add_shopping_cart),
-          label: Text('Add to Cart'),
-          onPressed: () {
-            // Logika tambah ke keranjang
-            Get.snackbar(
-              'Added',
-              'Produk ditambahkanke keranjang (dummy)',
-              snackPosition: SnackPosition.BOTTOM,
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: theme.colorScheme.primary,
-            foregroundColor: theme.colorScheme.onPrimary,
-            padding: EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        child: Obx(
+          () => ElevatedButton.icon(
+            icon: Icon(Icons.add_shopping_cart),
+            label: controller.isLoadingCart.value
+                ? CircularProgressIndicator(color: theme.colorScheme.onPrimary)
+                : Text('Add to Cart'),
+            onPressed:
+                controller.isLoadingCart.value ? null : controller.addToCart,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              padding: EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ),
