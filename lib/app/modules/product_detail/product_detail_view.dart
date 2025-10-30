@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:_89_secondstufff/app/modules/product_detail/product_detail_controller.dart';
 
 class ProductDetailView extends GetView<ProductDetailController> {
-  const ProductDetailView({Key? key}) : super(key: key);
+  const ProductDetailView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +69,7 @@ class ProductDetailView extends GetView<ProductDetailController> {
               Text(
                 product.description,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onBackground.withOpacity(0.7),
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
 

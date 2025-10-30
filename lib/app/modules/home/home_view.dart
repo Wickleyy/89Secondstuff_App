@@ -41,7 +41,7 @@ class HomeView extends GetView<HomeController> {
         ),
         title: Container(
           decoration: BoxDecoration(
-            color: colorScheme.background,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(30),
           ),
           child: TextField(

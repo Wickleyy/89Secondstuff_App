@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 // Ganti dari StatelessWidget ke GetView
 class SearchView extends GetView<SearchController> {
-  const SearchView({Key? key}) : super(key: key);
+  const SearchView({super.key});
 
   @override
   Widget build(BuildContext context) {

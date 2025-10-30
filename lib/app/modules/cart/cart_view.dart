@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'cart_controller.dart';
 
 class CartView extends GetView<CartController> {
-  const CartView({Key? key}) : super(key: key);
+  const CartView({super.key});
 
   @override
   Widget build(BuildContext context) {

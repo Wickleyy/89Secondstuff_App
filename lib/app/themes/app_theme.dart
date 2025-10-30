@@ -23,11 +23,9 @@ class AppTheme {
     colorScheme: const ColorScheme.light(
       primary: lightPrimary,
       secondary: lightSupport,
-      background: lightBackground,
       surface: lightSurface,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
-      onBackground: lightOnText,
       onSurface: lightOnText,
       error: Colors.redAccent,
       onError: Colors.white,
@@ -69,11 +67,9 @@ class AppTheme {
     colorScheme: const ColorScheme.dark(
       primary: darkAccent,
       secondary: darkAccent,
-      background: darkBackground,
       surface: darkSurface,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
-      onBackground: darkOnText,
       onSurface: darkOnText,
       error: Colors.redAccent,
       onError: Colors.white,

@@ -5,7 +5,7 @@ import 'package:_89_secondstufff/app/widgets/product_card.dart';
 import 'category_product_controller.dart';
 
 class CategoryProductsView extends GetView<CategoryProductsController> {
-  const CategoryProductsView({Key? key}) : super(key: key);
+  const CategoryProductsView({super.key});
 
   @override
   Widget build(BuildContext context) {
