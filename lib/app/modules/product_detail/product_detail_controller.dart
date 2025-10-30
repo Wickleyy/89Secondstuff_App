@@ -1,9 +1,11 @@
 import 'package:get/get.dart';
 import 'package:_89_secondstufff/app/data/models/product_model.dart';
 import 'package:_89_secondstufff/app/data/services/api_service.dart';
+import 'package:_89_secondstufff/app/modules/cart/cart_controller.dart';
 
 class ProductDetailController extends GetxController {
   final ApiService apiService = Get.find<ApiService>();
+  final cartController = Get.find<CartController>();
 
   var product = Rx<Product?>(null);
   var isLoadingCart = false.obs;
@@ -20,21 +22,15 @@ class ProductDetailController extends GetxController {
   void addToCart() async {
     if (product.value == null) return;
 
+    // 1. Tambahkan ke keranjang lokal
+    cartController.addToCart(product.value!);
+
+    // 2. Opsional: sync ke API (FakeStore API tidak simpan permanen sebenarnya)
     isLoadingCart.value = true;
     try {
       await apiService.addToCart(2, product.value!.id, 1);
-
-      Get.snackbar(
-        'Success',
-        '${product.value!.title} ditambahkan ke keranjang!',
-        snackPosition: SnackPosition.BOTTOM,
-      );
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Gagal menambahkan ke keranjang: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      print("API Cart hanya simulasi, error: $e");
     } finally {
       isLoadingCart.value = false;
     }

@@ -26,7 +26,7 @@ class HomeController extends GetxController {
   void fetchSliderProducts() async {
     try {
       isLoadingBanners.value = true;
-      var products = await apiService.getProductsByCategory("electronics");
+      var products = await apiService.getProductsByCategory("men's clothing");
       if (products.isNotEmpty) {
         sliderProducts.assignAll(products.take(5).map((p) => p.image).toList());
       }
@@ -47,7 +47,7 @@ class HomeController extends GetxController {
   void fetchFeaturedGrid() async {
     try {
       isLoadingGrid.value = true;
-      var products = await apiService.getProductsByCategory("jewelery");
+      var products = await apiService.getProductsByCategory("men's clothing");
       featuredProductsGrid.assignAll(products.take(6));
     } catch (e) {
       print("Error fetch featured grid: $e");
