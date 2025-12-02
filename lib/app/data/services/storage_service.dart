@@ -1,8 +1,7 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:_89_secondstufff/app/data/services/supabase_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-// import 'package:image_picker/image_picker.dart'; // (Perlu ditambah di pubspec jika belum ada)
 
 class StorageService extends GetxService {
   final SupabaseService _supabase = Get.find<SupabaseService>();
@@ -26,7 +25,7 @@ class StorageService extends GetxService {
 
       return imageUrl;
     } catch (e) {
-      print('Error uploading image: $e');
+      debugPrint('Error uploading image: $e');
       return null;
     }
   }

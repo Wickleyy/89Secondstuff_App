@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:_89_secondstufff/app/routes/app_pages.dart';
 import 'package:_89_secondstufff/app/themes/app_theme.dart';
 import 'package:_89_secondstufff/app/themes/theme_controller.dart';
@@ -8,36 +10,85 @@ import 'package:_89_secondstufff/app/data/services/supabase_service.dart';
 import 'package:_89_secondstufff/app/data/providers/product_provider.dart';
 import 'package:_89_secondstufff/app/data/services/api_service.dart';
 import 'package:_89_secondstufff/app/data/services/local_storage_service.dart';
+import 'package:_89_secondstufff/app/data/services/location_service.dart';
+import 'package:_89_secondstufff/app/data/services/payment_service.dart';
+import 'package:_89_secondstufff/app/data/services/order_service.dart';
+import 'package:_89_secondstufff/app/data/services/wishlist_service.dart';
+import 'package:_89_secondstufff/app/data/controllers/address_controller.dart';
 import 'package:_89_secondstufff/app/data/models/profiles_model.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  String initialRoute = AppRoutes.LOGIN;
+
+  // 0. Load environment variables FIRST
+  await dotenv.load(fileName: ".env");
+  debugPrint('[INIT] dotenv loaded');
+
+  // Initialize date formatting for Indonesian locale
+  await initializeDateFormatting('id_ID', null);
+  debugPrint('[INIT] Date formatting initialized');
+
   // 1. Inisialisasi Tema
   final themeController = Get.put(ThemeController());
   await themeController.initTheme();
+  debugPrint('[INIT] Theme initialized');
 
-  // 2. Inisialisasi Supabase & Hive
-  // Kita simpan instance SupabaseService untuk pengecekan sesi nanti
+  // 2. Inisialisasi Supabase (CRITICAL - harus sukses)
   final supabaseService = await Get.putAsync(() => SupabaseService().init());
-  await Get.putAsync(() => LocalStorageService().init());
+  debugPrint('[INIT] Supabase initialized');
 
-  // 3. Daftarkan service & controller lain
+  // 3. Inisialisasi Hive/LocalStorage
+  await Get.putAsync(() => LocalStorageService().init());
+  debugPrint('[INIT] LocalStorage initialized');
+
+  // 4. Daftarkan service & controller lain
   Get.put(ApiService());
   Get.put(CartController());
-  Get.put(ProductProvider());
+  Get.lazyPut(() => ProductProvider());
+  debugPrint('[INIT] Basic services registered');
+  
+  // 5. Inisialisasi Location Service (optional, wrap dengan try-catch)
+  try {
+    await Get.putAsync(() => LocationService().init());
+    debugPrint('[INIT] Location service initialized');
+  } catch (e) {
+    debugPrint('[INIT] Location service failed: $e');
+  }
+  
+  // 6. Inisialisasi Payment & Order Services (optional untuk web)
+  try {
+    await Get.putAsync(() => PaymentService().init());
+    debugPrint('[INIT] Payment service initialized');
+  } catch (e) {
+    debugPrint('[INIT] Payment service failed: $e');
+  }
+  
+  try {
+    await Get.putAsync(() => OrderService().init());
+    debugPrint('[INIT] Order service initialized');
+  } catch (e) {
+    debugPrint('[INIT] Order service failed: $e');
+  }
+  
+  // 7. Wishlist Service
+  try {
+    await Get.putAsync(() => WishlistService().init());
+    debugPrint('[INIT] Wishlist service initialized');
+  } catch (e) {
+    debugPrint('[INIT] Wishlist service failed: $e');
+  }
+  
+  // 8. AddressController - lazy init
+  Get.lazyPut(() => AddressController());
+  debugPrint('[INIT] AddressController registered (lazy)');
 
   // --- LOGIKA AUTO-LOGIN ---
-  // Tentukan rute awal berdasarkan status sesi
-  String initialRoute = AppRoutes.LOGIN;
-
-  // Cek apakah ada user yang sedang login (session valid)
   final currentUser = supabaseService.currentUser;
 
   if (currentUser != null) {
     try {
-      // Jika ada user, kita perlu cek role-nya untuk menentukan arah (Admin/User)
-      // Kita lakukan query singkat ke tabel profiles
       final profileResponse = await supabaseService.client
           .from('profiles')
           .select('role')
@@ -53,13 +104,10 @@ Future<void> main() async {
         }
       }
     } catch (e) {
-      // Jika terjadi error saat cek role (misal koneksi buruk),
-      // amannya tetap ke login atau bisa ke home user sebagai default.
-      print("Error checking role during auto-login: $e");
-      // Opsional: Tetap ke login agar user login ulang
+      debugPrint("Error checking role during auto-login: $e");
     }
   }
-  // -----------------------
+  debugPrint('[INIT] Initial route: $initialRoute');
 
   runApp(MyApp(initialRoute: initialRoute));
 }

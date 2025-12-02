@@ -5,7 +5,7 @@ import 'package:_89_secondstufff/app/data/services/supabase_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProductProvider extends GetxService {
-  final SupabaseService _supabase = Get.find();
+  SupabaseService get _supabase => Get.find();
 
   // Mengambil semua kategori
   Future<List<Category>> getCategories() async {

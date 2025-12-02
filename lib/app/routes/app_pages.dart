@@ -42,6 +42,15 @@ import '../modules/admin/admin_product_list/product_list_binding.dart';
 import '../modules/admin/admin_product_list/product_list_view.dart';
 import '../modules/admin/admin_product_form/product_form_binding.dart';
 import '../modules/admin/admin_product_form/product_form_view.dart';
+import '../modules/account/shipping_address/map_picker/map_picker_view.dart';
+import '../modules/account/shipping_address/map_picker/map_picker_binding.dart';
+import '../modules/checkout/checkout_view.dart';
+import '../modules/checkout/checkout_binding.dart';
+import '../modules/checkout/payment_status_view.dart';
+import '../modules/settings/settings_view.dart';
+import '../modules/settings/settings_binding.dart';
+import '../modules/wishlist/wishlist_view.dart';
+import '../modules/wishlist/wishlist_binding.dart';
 
 part 'app_routes.dart';
 
@@ -104,6 +113,29 @@ class AppPages {
       page: () => CartView(),
       binding: CartBinding(),
     ),
+    GetPage(
+      name: _Paths.CHECKOUT,
+      page: () => const CheckoutView(),
+      binding: CheckoutBinding(),
+    ),
+    GetPage(
+      name: _Paths.PAYMENT_STATUS,
+      page: () => const PaymentStatusView(),
+    ),
+
+    // Settings
+    GetPage(
+      name: _Paths.SETTINGS,
+      page: () => const SettingsView(),
+      binding: SettingsBinding(),
+    ),
+
+    // Wishlist
+    GetPage(
+      name: _Paths.WISHLIST,
+      page: () => const WishlistView(),
+      binding: WishlistBinding(),
+    ),
 
     // Account Sub Routes
     GetPage(
@@ -120,6 +152,11 @@ class AppPages {
       name: _Paths.SHIPPING_ADDRESS,
       page: () => ShippingAddressView(),
       binding: ShippingAddressBinding(),
+    ),
+    GetPage(
+      name: _Paths.MAP_PICKER,
+      page: () => const MapPickerView(),
+      binding: MapPickerBinding(),
     ),
     GetPage(
       name: _Paths.NOTIFICATION_SETTINGS,

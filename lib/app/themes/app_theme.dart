@@ -2,19 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Warna Light Mode (Retro & Playful)
-  static const Color lightPrimary = Color(0xFFD2691E); // Burnt Orange
-  static const Color lightSupport = Color(0xFF008080); // Teal
-  static const Color lightBackground = Color(0xFFFFF5E1); // Cream
+  // Deep Royal Purple Theme Colors
+  static const Color deepPurpleDark = Color(0xFF1A0F2E);
+  static const Color deepPurpleLight = Color(0xFF4C2A85);
+  static const Color accentMustard = Color(0xFFD4A84B);
+  static const Color accentRed = Color(0xFFB8354C);
+  static const Color glowPurple = Color(0xFF6B4E9E);
+  
+  // Warna Light Mode (Deep Purple Theme)
+  static const Color lightPrimary = Color(0xFF4C2A85); // Deep Purple
+  static const Color lightSupport = Color(0xFFD4A84B); // Mustard Accent
+  static const Color lightBackground = Color(0xFFF8F5FF); // Soft Purple Tint
   static const Color lightSurface = Colors.white;
-  static const Color lightOnText = Color(0xFF3E2723); // Dark Brown
+  static const Color lightOnText = Color(0xFF1A0F2E); // Deep Purple Dark
 
-  // Warna Dark Mode (Minimalist Urban Streetwear)
-  static const Color darkPrimary = Color(0xFF2E2E2E); // Graphite Gray
-  static const Color darkAccent = Color(0xFF007AFF); // Electric Blue
-  static const Color darkBackground = Color(0xFF1C1C1C); // Charcoal Black
-  static const Color darkSurface = Color(0xFF2E2E2E);
-  static const Color darkOnText = Color(0xFFFFFFFF); // White
+  // Warna Dark Mode (Deep Royal Purple)
+  static const Color darkPrimary = Color(0xFFD4A84B); // Mustard Accent
+  static const Color darkAccent = Color(0xFFB8354C); // Red Accent
+  static const Color darkBackground = Color(0xFF1A0F2E); // Deep Purple Dark
+  static const Color darkSurface = Color(0xFF261847); // Slightly lighter purple
+  static const Color darkOnText = Color(0xFFF8F5FF); // Light text
+  
+  // Gradient untuk background
+  static const LinearGradient darkGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [deepPurpleDark, deepPurpleLight],
+  );
+  
+  static const LinearGradient cardGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF2D1B4E), Color(0xFF1A0F2E)],
+  );
 
   static final ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
@@ -44,20 +64,30 @@ class AppTheme {
       bodyColor: lightOnText,
       displayColor: lightOnText,
     ),
-    // --- FIX: Menggunakan CardThemeData ---
     cardTheme: CardThemeData(
       color: lightSurface,
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 4,
+      shadowColor: lightPrimary.withValues(alpha: 0.15),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: accentMustard,
+        foregroundColor: Colors.white,
+        elevation: 4,
+        shadowColor: accentMustard.withValues(alpha: 0.4),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
     ),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: lightSurface,
       selectedItemColor: lightPrimary,
-      unselectedItemColor: lightOnText.withOpacity(0.6),
+      unselectedItemColor: lightOnText.withValues(alpha: 0.6),
       type: BottomNavigationBarType.fixed,
-      elevation: 5,
+      elevation: 8,
     ),
-    drawerTheme: DrawerThemeData(backgroundColor: lightBackground),
+    drawerTheme: const DrawerThemeData(backgroundColor: lightBackground),
   );
 
   static final ThemeData darkTheme = ThemeData(
@@ -88,19 +118,54 @@ class AppTheme {
       bodyColor: darkOnText,
       displayColor: darkOnText,
     ),
-    // --- FIX: Menggunakan CardThemeData ---
     cardTheme: CardThemeData(
       color: darkSurface,
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 8,
+      shadowColor: glowPurple.withValues(alpha: 0.3),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: accentMustard,
+        foregroundColor: deepPurpleDark,
+        elevation: 6,
+        shadowColor: accentMustard.withValues(alpha: 0.5),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: accentMustard,
+        side: const BorderSide(color: accentMustard, width: 1.5),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
     ),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: darkSurface,
-      selectedItemColor: darkAccent,
-      unselectedItemColor: darkOnText.withOpacity(0.6),
+      selectedItemColor: accentMustard,
+      unselectedItemColor: darkOnText.withValues(alpha: 0.5),
       type: BottomNavigationBarType.fixed,
-      elevation: 5,
+      elevation: 12,
     ),
-    drawerTheme: DrawerThemeData(backgroundColor: darkSurface),
+    drawerTheme: const DrawerThemeData(backgroundColor: darkSurface),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: deepPurpleDark.withValues(alpha: 0.5),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: glowPurple.withValues(alpha: 0.3)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: accentMustard, width: 2),
+      ),
+      hintStyle: TextStyle(color: darkOnText.withValues(alpha: 0.5)),
+    ),
   );
 }

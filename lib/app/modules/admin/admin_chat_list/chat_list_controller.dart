@@ -2,7 +2,6 @@ import 'package:get/get.dart';
 import 'package:_89_secondstufff/app/data/models/profiles_model.dart';
 import 'package:_89_secondstufff/app/data/services/supabase_service.dart';
 import 'package:_89_secondstufff/app/routes/app_pages.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AdminChatListController extends GetxController {
   final SupabaseService _supabase = Get.find<SupabaseService>();

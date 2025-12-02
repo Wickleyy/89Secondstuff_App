@@ -1,168 +1,257 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:_89_secondstufff/app/data/models/order_model.dart';
+import 'package:_89_secondstufff/app/themes/app_theme.dart';
 import 'order_history_controller.dart';
 
 class OrderHistoryView extends GetView<OrderHistoryController> {
-  const OrderHistoryView({Key? key}) : super(key: key);
+  const OrderHistoryView({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Riwayat Pesanan',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppTheme.deepPurpleDark, Color(0xFF251742), AppTheme.deepPurpleDark]) : null,
+          color: isDark ? null : colorScheme.surface,
         ),
-        centerTitle: true,
-        backgroundColor: colorScheme.surface,
-        elevation: 1,
-      ),
-      body: Obx(
-        () {
-          if (controller.isLoading.value) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (controller.orders.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.shopping_bag_outlined,
-                      size: 80, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Tidak Ada Pesanan',
-                    style: theme.textTheme.headlineSmall
-                        ?.copyWith(color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Mulai berbelanja sekarang!',
-                    style: theme.textTheme.bodyLarge,
-                  ),
-                ],
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildAppBar(isDark, colorScheme),
+              _buildFilterChips(isDark, colorScheme),
+              Expanded(
+                child: Obx(() {
+                  if (controller.isLoading.value) return Center(child: CircularProgressIndicator(color: isDark ? AppTheme.accentMustard : colorScheme.primary));
+                  final orders = controller.filteredOrders;
+                  if (orders.isEmpty) return _buildEmptyState(isDark, colorScheme);
+                  return RefreshIndicator(
+                    onRefresh: controller.refreshOrders,
+                    color: isDark ? AppTheme.accentMustard : colorScheme.primary,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: orders.length,
+                      itemBuilder: (context, index) => _buildOrderCard(orders[index], currencyFormat, dateFormat, isDark, colorScheme),
+                    ),
+                  );
+                }),
               ),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16.0),
-            itemCount: controller.orders.length,
-            itemBuilder: (context, index) {
-              final order = controller.orders[index];
-              return _buildOrderCard(theme, colorScheme, order);
-            },
-          );
-        },
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildOrderCard(
-      ThemeData theme, ColorScheme colorScheme, Order order) {
-    final isDelivered = order.status == 'Delivered';
-    final statusColor = isDelivered ? Colors.green : Colors.orange;
+  Widget _buildAppBar(bool isDark, ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: isDark ? LinearGradient(colors: [AppTheme.glowPurple.withValues(alpha: 0.3), AppTheme.deepPurpleLight.withValues(alpha: 0.3)]) : null,
+              color: isDark ? null : colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: IconButton(icon: Icon(Icons.arrow_back_rounded, color: isDark ? AppTheme.accentMustard : colorScheme.primary), onPressed: () => Get.back()),
+          ),
+          const SizedBox(width: 16),
+          Text('Riwayat Pesanan', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : colorScheme.onSurface)),
+          const Spacer(),
+          Container(
+            decoration: BoxDecoration(
+              gradient: isDark ? LinearGradient(colors: [AppTheme.glowPurple.withValues(alpha: 0.3), AppTheme.deepPurpleLight.withValues(alpha: 0.3)]) : null,
+              color: isDark ? null : colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: IconButton(icon: Icon(Icons.refresh, color: isDark ? AppTheme.accentMustard : colorScheme.primary), onPressed: controller.refreshOrders),
+          ),
+        ],
+      ),
+    );
+  }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildFilterChips(bool isDark, ColorScheme colorScheme) {
+    return Container(
+      height: 50,
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Obx(() => ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: controller.filterOptions.length,
+            itemBuilder: (context, index) {
+              final option = controller.filterOptions[index];
+              final isSelected = controller.selectedFilter.value == option['value'];
+              return Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: GestureDetector(
+                  onTap: () => controller.setFilter(option['value']!),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      gradient: isSelected ? LinearGradient(colors: isDark ? [AppTheme.accentMustard, AppTheme.accentRed] : [colorScheme.primary, colorScheme.secondary]) : (isDark ? LinearGradient(colors: [AppTheme.deepPurpleLight.withValues(alpha: 0.3), AppTheme.deepPurpleDark.withValues(alpha: 0.4)]) : null),
+                      color: isSelected ? null : (isDark ? null : colorScheme.surface),
+                      borderRadius: BorderRadius.circular(12),
+                      border: isSelected ? null : Border.all(color: isDark ? AppTheme.glowPurple.withValues(alpha: 0.3) : colorScheme.outline.withValues(alpha: 0.2)),
+                      boxShadow: isSelected ? [BoxShadow(color: (isDark ? AppTheme.accentMustard : colorScheme.primary).withValues(alpha: 0.3), blurRadius: 8)] : null,
+                    ),
+                    child: Text(option['label']!, style: GoogleFonts.poppins(fontSize: 13, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500, color: isSelected ? Colors.white : (isDark ? Colors.white70 : colorScheme.onSurface.withValues(alpha: 0.7)))),
+                  ),
+                ),
+              );
+            },
+          )),
+    );
+  }
+
+  Widget _buildEmptyState(bool isDark, ColorScheme colorScheme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(gradient: isDark ? LinearGradient(colors: [AppTheme.glowPurple.withValues(alpha: 0.15), AppTheme.deepPurpleLight.withValues(alpha: 0.1)]) : null, color: isDark ? null : colorScheme.primary.withValues(alpha: 0.08), shape: BoxShape.circle),
+            child: Icon(Icons.receipt_long_outlined, size: 64, color: isDark ? AppTheme.accentMustard.withValues(alpha: 0.6) : colorScheme.primary.withValues(alpha: 0.5)),
+          ),
+          const SizedBox(height: 24),
+          Text('Tidak Ada Pesanan', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white70 : colorScheme.onSurface.withValues(alpha: 0.7))),
+          const SizedBox(height: 8),
+          Text('Mulai berbelanja sekarang!', style: GoogleFonts.poppins(fontSize: 14, color: isDark ? Colors.white54 : colorScheme.onSurface.withValues(alpha: 0.5))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrderCard(Order order, NumberFormat currencyFormat, DateFormat dateFormat, bool isDark, ColorScheme colorScheme) {
+    final statusColor = controller.getStatusColor(order.status);
+    final statusIcon = controller.getStatusIcon(order.status);
+    final statusText = controller.getStatusText(order.status);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        gradient: isDark ? LinearGradient(colors: [AppTheme.deepPurpleLight.withValues(alpha: 0.3), AppTheme.deepPurpleDark.withValues(alpha: 0.5)]) : null,
+        color: isDark ? null : colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: isDark ? AppTheme.glowPurple.withValues(alpha: 0.2) : colorScheme.outline.withValues(alpha: 0.1)),
+        boxShadow: isDark ? [BoxShadow(color: AppTheme.glowPurple.withValues(alpha: 0.15), blurRadius: 12)] : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [statusColor.withValues(alpha: 0.15), statusColor.withValues(alpha: 0.05)]),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Row(
               children: [
-                Text(
-                  order.id,
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(gradient: LinearGradient(colors: [statusColor.withValues(alpha: 0.25), statusColor.withValues(alpha: 0.1)]), borderRadius: BorderRadius.circular(12)),
+                  child: Icon(statusIcon, color: statusColor, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Order #${order.id.substring(0, 8)}', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14, color: isDark ? Colors.white : colorScheme.onSurface)),
+                      Text(dateFormat.format(order.createdAt), style: GoogleFonts.poppins(fontSize: 11, color: isDark ? Colors.white54 : colorScheme.onSurface.withValues(alpha: 0.5))),
+                    ],
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    controller.getStatusColor(order.status),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: statusColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  decoration: BoxDecoration(gradient: LinearGradient(colors: [statusColor.withValues(alpha: 0.25), statusColor.withValues(alpha: 0.15)]), borderRadius: BorderRadius.circular(20)),
+                  child: Text(statusText, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: statusColor)),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                if (order.items != null && order.items!.isNotEmpty)
+                  ...order.items!.take(2).map((item) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.network(item.productImage, width: 50, height: 50, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(width: 50, height: 50, decoration: BoxDecoration(color: isDark ? AppTheme.deepPurpleLight : Colors.grey[200], borderRadius: BorderRadius.circular(10)), child: Icon(Icons.image, size: 24, color: isDark ? Colors.white38 : Colors.grey))),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(item.productTitle, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: isDark ? Colors.white : colorScheme.onSurface), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  Text('${item.quantity}x ${currencyFormat.format(item.price)}', style: GoogleFonts.poppins(fontSize: 11, color: isDark ? Colors.white54 : colorScheme.onSurface.withValues(alpha: 0.5))),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+                if (order.items != null && order.items!.length > 2)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text('+${order.items!.length - 2} produk lainnya', style: GoogleFonts.poppins(fontSize: 12, color: isDark ? AppTheme.accentMustard : colorScheme.primary, fontWeight: FontWeight.w500)),
+                  ),
+                Divider(color: isDark ? Colors.white12 : colorScheme.outline.withValues(alpha: 0.1)),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Tanggal',
-                      style: theme.textTheme.labelSmall
-                          ?.copyWith(color: Colors.grey),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Total Pembayaran', style: GoogleFonts.poppins(fontSize: 11, color: isDark ? Colors.white54 : colorScheme.onSurface.withValues(alpha: 0.5))),
+                        Text(currencyFormat.format(order.total), style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.bold, color: isDark ? AppTheme.accentMustard : colorScheme.primary)),
+                      ],
                     ),
-                    Text(
-                      order.date,
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Total',
-                      style: theme.textTheme.labelSmall
-                          ?.copyWith(color: Colors.grey),
-                    ),
-                    Text(
-                      'Rp${order.total.toStringAsFixed(0)}',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.primary,
-                      ),
-                    ),
+                    order.isPending
+                        ? ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isDark ? AppTheme.accentMustard : colorScheme.primary,
+                              foregroundColor: isDark ? AppTheme.deepPurpleDark : Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              elevation: isDark ? 6 : 2,
+                              shadowColor: isDark ? AppTheme.accentMustard.withValues(alpha: 0.4) : null,
+                            ),
+                            child: Text('Bayar', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                          )
+                        : OutlinedButton(
+                            onPressed: () {},
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: isDark ? AppTheme.accentMustard : colorScheme.primary,
+                              side: BorderSide(color: isDark ? AppTheme.accentMustard : colorScheme.primary, width: 1.5),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            child: Text('Detail', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                          ),
                   ],
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              '${order.itemCount} Item',
-              style: theme.textTheme.labelSmall?.copyWith(color: Colors.grey),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.visibility_outlined),
-                label: const Text('Lihat Detail'),
-                onPressed: () {
-                  Get.snackbar('Info', 'Detail pesanan ${order.id}',
-                      snackPosition: SnackPosition.BOTTOM);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary.withOpacity(0.1),
-                  foregroundColor: colorScheme.primary,
-                  side: BorderSide(color: colorScheme.primary),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

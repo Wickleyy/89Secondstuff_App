@@ -20,27 +20,52 @@ class Product {
 
     if (isSupabase) {
       final categoryData = json['categories'];
-      String categoryName = (categoryData != null && categoryData is Map)
-          ? categoryData['name']
-          : 'Uncategorized';
+      String categoryName = 'Uncategorized';
+      if (categoryData != null && categoryData is Map) {
+        categoryName = categoryData['name']?.toString() ?? 'Uncategorized';
+      }
 
       return Product(
-        id: json['id'],
-        title: json['title'],
-        price: (json['price'] as num).toDouble(),
-        description: json['description'] ?? '',
+        id: _parseInt(json['id']),
+        title: json['title']?.toString() ?? 'Produk',
+        price: _parseDouble(json['price']),
+        description: json['description']?.toString() ?? '',
         category: categoryName,
-        image: json['image_url'],
+        image: json['image_url']?.toString() ?? '',
       );
     } else {
       return Product(
-        id: json['id'],
-        title: json['title'],
-        price: (json['price'] as num).toDouble(),
-        description: json['description'],
-        category: json['category'],
-        image: json['image'],
+        id: _parseInt(json['id']),
+        title: json['title']?.toString() ?? 'Produk',
+        price: _parseDouble(json['price']),
+        description: json['description']?.toString() ?? '',
+        category: json['category']?.toString() ?? 'Uncategorized',
+        image: json['image']?.toString() ?? '',
       );
     }
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    return int.tryParse(value.toString()) ?? 0;
+  }
+
+  static double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    return double.tryParse(value.toString()) ?? 0.0;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'price': price,
+      'description': description,
+      'category': category,
+      'image': image,
+    };
   }
 }

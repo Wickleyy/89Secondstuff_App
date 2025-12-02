@@ -10,6 +10,8 @@ class ShippingAddress {
   final bool isDefault;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final double? latitude;
+  final double? longitude;
 
   ShippingAddress({
     required this.id,
@@ -23,22 +25,43 @@ class ShippingAddress {
     required this.isDefault,
     required this.createdAt,
     required this.updatedAt,
+    this.latitude,
+    this.longitude,
   });
 
   factory ShippingAddress.fromJson(Map<String, dynamic> json) {
     return ShippingAddress(
-      id: json['id'],
-      userId: json['user_id'],
-      name: json['name'],
-      phone: json['phone'],
-      address: json['address'],
-      city: json['city'],
-      province: json['province'],
-      postalCode: json['postal_code'],
-      isDefault: json['is_default'] ?? false,
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      userId: json['user_id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      address: json['address']?.toString() ?? '',
+      city: json['city']?.toString() ?? '',
+      province: json['province']?.toString() ?? '',
+      postalCode: json['postal_code']?.toString() ?? '',
+      isDefault: json['is_default'] == true,
+      createdAt: _parseDateTime(json['created_at']),
+      updatedAt: _parseDateTime(json['updated_at']),
+      latitude: _parseDouble(json['latitude']),
+      longitude: _parseDouble(json['longitude']),
     );
+  }
+
+  static DateTime _parseDateTime(dynamic value) {
+    if (value == null) return DateTime.now();
+    if (value is DateTime) return value;
+    try {
+      return DateTime.parse(value.toString());
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    return double.tryParse(value.toString());
   }
 
   Map<String, dynamic> toJsonForInsert() {
@@ -51,6 +74,8 @@ class ShippingAddress {
       'province': province,
       'postal_code': postalCode,
       'is_default': isDefault,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 
@@ -66,6 +91,8 @@ class ShippingAddress {
     bool? isDefault,
     DateTime? createdAt,
     DateTime? updatedAt,
+    double? latitude,
+    double? longitude,
   }) {
     return ShippingAddress(
       id: id ?? this.id,
@@ -79,6 +106,14 @@ class ShippingAddress {
       isDefault: isDefault ?? this.isDefault,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
     );
   }
+
+  String get fullAddress {
+    return '$address, $city, $province $postalCode';
+  }
+
+  bool get hasCoordinates => latitude != null && longitude != null;
 }

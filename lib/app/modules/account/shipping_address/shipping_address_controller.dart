@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:_89_secondstufff/app/data/services/supabase_service.dart';
+import 'package:_89_secondstufff/app/data/controllers/address_controller.dart';
 import 'models/shipping_address_model.dart';
 import 'address_form_view.dart';
+import 'map_picker/map_picker_view.dart';
+import 'map_picker/map_picker_binding.dart';
 
 class ShippingAddressController extends GetxController {
   final SupabaseService _supabase = Get.find<SupabaseService>();
@@ -17,6 +20,9 @@ class ShippingAddressController extends GetxController {
   late TextEditingController provinceController;
   late TextEditingController postalCodeController;
   var isDefaultAddress = false.obs;
+  
+  final Rx<double?> selectedLatitude = Rx<double?>(null);
+  final Rx<double?> selectedLongitude = Rx<double?>(null);
 
   @override
   void onInit() {
@@ -34,12 +40,16 @@ class ShippingAddressController extends GetxController {
     postalCodeController = TextEditingController();
   }
 
-  // PERBAIKAN 1: Ubah 'void' menjadi 'Future<void>' agar bisa di-await
   Future<void> loadAddresses() async {
     try {
       isLoading.value = true;
       final user = _supabase.currentUser;
-      if (user == null) throw Exception('User tidak ditemukan');
+      if (user == null) {
+        debugPrint('[Address] No user found, cannot load addresses');
+        return;
+      }
+
+      debugPrint('[Address] Loading addresses for user: ${user.id}');
 
       final response = await _supabase.client
           .from('shipping_addresses')
@@ -48,13 +58,17 @@ class ShippingAddressController extends GetxController {
           .order('is_default', ascending: false)
           .order('created_at', ascending: false);
 
+      debugPrint('[Address] Load response: $response');
+
       final List<dynamic> data = response;
       final addressList = data
           .map((e) => ShippingAddress.fromJson(e as Map<String, dynamic>))
           .toList();
 
       addresses.assignAll(addressList);
+      debugPrint('[Address] Loaded ${addressList.length} addresses');
     } catch (e) {
+      debugPrint('[Address] Error loading addresses: $e');
       _showErrorSnackbar('Gagal memuat alamat: $e');
     } finally {
       isLoading.value = false;
@@ -67,37 +81,46 @@ class ShippingAddressController extends GetxController {
     try {
       isLoading.value = true;
       final user = _supabase.currentUser;
-      if (user == null) throw Exception('User tidak ditemukan');
+      if (user == null) {
+        _showErrorSnackbar('Anda harus login terlebih dahulu');
+        return;
+      }
+
+      debugPrint('[Address] Creating address for user: ${user.id}');
 
       if (isDefaultAddress.value) {
         await _setAllAddressesNonDefault(user.id);
       }
 
-      final newAddress = ShippingAddress(
-        id: 0,
-        userId: user.id,
-        name: nameController.text,
-        phone: phoneController.text,
-        address: addressController.text,
-        city: cityController.text,
-        province: provinceController.text,
-        postalCode: postalCodeController.text,
-        isDefault: isDefaultAddress.value,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
+      final addressData = {
+        'user_id': user.id,
+        'name': nameController.text.trim(),
+        'phone': phoneController.text.trim(),
+        'address': addressController.text.trim(),
+        'city': cityController.text.trim(),
+        'province': provinceController.text.trim(),
+        'postal_code': postalCodeController.text.trim(),
+        'is_default': isDefaultAddress.value,
+        'latitude': selectedLatitude.value,
+        'longitude': selectedLongitude.value,
+      };
 
-      // PERBAIKAN 2: Gunakan .select() agar return value valid (List) dan tidak void
-      await _supabase.client
+      debugPrint('[Address] Insert data: $addressData');
+
+      final response = await _supabase.client
           .from('shipping_addresses')
-          .insert(newAddress.toJsonForInsert())
+          .insert(addressData)
           .select();
 
+      debugPrint('[Address] Insert response: $response');
+
       Get.back();
-      await loadAddresses(); // Sekarang ini valid karena loadAddresses sudah Future<void>
+      await loadAddresses();
+      _syncToGlobalAddressController();
       _showSuccessSnackbar('Alamat berhasil ditambahkan');
       _clearForm();
     } catch (e) {
+      debugPrint('[Address] Error creating address: $e');
       _showErrorSnackbar('Gagal menambahkan alamat: $e');
     } finally {
       isLoading.value = false;
@@ -125,6 +148,8 @@ class ShippingAddressController extends GetxController {
         'postal_code': postalCodeController.text,
         'is_default': isDefaultAddress.value,
         'updated_at': DateTime.now().toIso8601String(),
+        'latitude': selectedLatitude.value,
+        'longitude': selectedLongitude.value,
       };
 
       // PERBAIKAN 2: Gunakan .select()
@@ -136,6 +161,7 @@ class ShippingAddressController extends GetxController {
 
       Get.back();
       await loadAddresses();
+      _syncToGlobalAddressController();
       _showSuccessSnackbar('Alamat berhasil diperbarui');
       _clearForm();
     } catch (e) {
@@ -177,6 +203,7 @@ class ShippingAddressController extends GetxController {
           .select();
 
       await loadAddresses();
+      _syncToGlobalAddressController();
       _showSuccessSnackbar('Alamat berhasil dihapus');
     } catch (e) {
       _showErrorSnackbar('Gagal menghapus alamat: $e');
@@ -201,6 +228,7 @@ class ShippingAddressController extends GetxController {
           .select();
 
       await loadAddresses();
+      _syncToGlobalAddressController();
       _showSuccessSnackbar('Alamat default telah diubah');
     } catch (e) {
       _showErrorSnackbar('Gagal mengubah alamat default: $e');
@@ -246,6 +274,8 @@ class ShippingAddressController extends GetxController {
     provinceController.text = address.province;
     postalCodeController.text = address.postalCode;
     isDefaultAddress.value = address.isDefault;
+    selectedLatitude.value = address.latitude;
+    selectedLongitude.value = address.longitude;
   }
 
   bool _validateForm() {
@@ -284,6 +314,80 @@ class ShippingAddressController extends GetxController {
     provinceController.clear();
     postalCodeController.clear();
     isDefaultAddress.value = false;
+    selectedLatitude.value = null;
+    selectedLongitude.value = null;
+  }
+
+  Future<void> openMapPicker() async {
+    final result = await Get.to<Map<String, dynamic>>(
+      () => const MapPickerView(),
+      binding: MapPickerBinding(),
+      arguments: {
+        'latitude': selectedLatitude.value,
+        'longitude': selectedLongitude.value,
+      },
+    );
+
+    if (result != null) {
+      selectedLatitude.value = result['latitude'];
+      selectedLongitude.value = result['longitude'];
+      
+      // Build alamat lengkap dari komponen
+      final road = result['road']?.toString() ?? '';
+      final houseNumber = result['house_number']?.toString() ?? '';
+      final neighbourhood = result['neighbourhood']?.toString() ?? '';
+      final village = result['village']?.toString() ?? '';
+      
+      // Build address string
+      List<String> addressParts = [];
+      if (road.isNotEmpty) {
+        if (houseNumber.isNotEmpty) {
+          addressParts.add('$road No. $houseNumber');
+        } else {
+          addressParts.add(road);
+        }
+      }
+      if (neighbourhood.isNotEmpty) addressParts.add(neighbourhood);
+      if (village.isNotEmpty) addressParts.add(village);
+      
+      // Set alamat lengkap
+      if (addressParts.isNotEmpty) {
+        addressController.text = addressParts.join(', ');
+      } else if (result['full_address'] != null && result['full_address'].toString().isNotEmpty) {
+        addressController.text = result['full_address'];
+      }
+      
+      // Set kota
+      final city = result['city']?.toString() ?? '';
+      if (city.isNotEmpty) {
+        cityController.text = city;
+      }
+      
+      // Set provinsi
+      final state = result['state']?.toString() ?? '';
+      if (state.isNotEmpty) {
+        provinceController.text = state;
+      }
+      
+      // Set kode pos
+      final postcode = result['postcode']?.toString() ?? '';
+      if (postcode.isNotEmpty) {
+        postalCodeController.text = postcode;
+      }
+      
+      debugPrint('[MapPicker] Address filled: ${addressController.text}');
+      debugPrint('[MapPicker] City: ${cityController.text}');
+      debugPrint('[MapPicker] Province: ${provinceController.text}');
+      debugPrint('[MapPicker] Postal: ${postalCodeController.text}');
+    }
+  }
+
+  bool get hasLocation => selectedLatitude.value != null && selectedLongitude.value != null;
+
+  void _syncToGlobalAddressController() {
+    if (Get.isRegistered<AddressController>()) {
+      Get.find<AddressController>().refresh();
+    }
   }
 
   void _showSuccessSnackbar(String message) {

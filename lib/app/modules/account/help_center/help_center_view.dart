@@ -1,117 +1,107 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:_89_secondstufff/app/themes/app_theme.dart';
 import 'help_center_controller.dart';
 
 class HelpCenterView extends GetView<HelpCenterController> {
-  const HelpCenterView({Key? key}) : super(key: key);
+  const HelpCenterView({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Pusat Bantuan',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppTheme.deepPurpleDark, Color(0xFF251742), AppTheme.deepPurpleDark])
+              : null,
+          color: isDark ? null : colorScheme.surface,
         ),
-        centerTitle: true,
-        backgroundColor: colorScheme.surface,
-        elevation: 1,
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header dengan Contact Info
-            _buildHeaderSection(theme, colorScheme),
-
-            const SizedBox(height: 32),
-
-            // FAQ Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'Pertanyaan yang Sering Diajukan',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildAppBar(isDark, colorScheme),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeaderSection(isDark, colorScheme),
+                      const SizedBox(height: 24),
+                      _buildFAQSection(isDark, colorScheme),
+                      const SizedBox(height: 24),
+                      _buildContactSection(isDark, colorScheme),
+                      const SizedBox(height: 32),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: controller.faqs.length,
-              itemBuilder: (context, index) {
-                final faq = controller.faqs[index];
-                // Gunakan Obx hanya di level item
-                return Obx(() => _buildFAQItem(theme, colorScheme, faq, index));
-              },
-            ),
-
-            const SizedBox(height: 32),
-
-            // Contact Support Section
-            _buildContactSupportSection(theme, colorScheme),
-
-            const SizedBox(height: 24),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildHeaderSection(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildAppBar(bool isDark, ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: isDark ? LinearGradient(colors: [AppTheme.glowPurple.withValues(alpha: 0.3), AppTheme.deepPurpleLight.withValues(alpha: 0.3)]) : null,
+              color: isDark ? null : colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: IconButton(icon: Icon(Icons.arrow_back_rounded, color: isDark ? AppTheme.accentMustard : colorScheme.primary), onPressed: () => Get.back()),
+          ),
+          const SizedBox(width: 16),
+          Text('Pusat Bantuan', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : colorScheme.onSurface)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderSection(bool isDark, ColorScheme colorScheme) {
     return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            colorScheme.primary,
-            colorScheme.primary.withOpacity(0.7),
-          ],
+          colors: isDark ? [AppTheme.deepPurpleLight, AppTheme.deepPurpleDark] : [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.7)],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: isDark ? [BoxShadow(color: AppTheme.glowPurple.withValues(alpha: 0.3), blurRadius: 16)] : [BoxShadow(color: colorScheme.primary.withValues(alpha: 0.3), blurRadius: 12)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Kami di sini untuk membantu',
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Temukan jawaban atas pertanyaan Anda atau hubungi tim support kami',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onPrimary.withOpacity(0.8),
-            ),
-          ),
-          const SizedBox(height: 16),
           Row(
             children: [
-              Icon(Icons.schedule, color: colorScheme.onPrimary, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'Kami melayani 24/7',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onPrimary,
-                  fontWeight: FontWeight.w500,
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(Icons.support_agent, color: isDark ? AppTheme.accentMustard : Colors.white, size: 28),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Kami di sini untuk membantu', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const SizedBox(height: 4),
+                    Text('Tim support siap 24/7', style: GoogleFonts.poppins(fontSize: 13, color: Colors.white70)),
+                  ],
                 ),
               ),
             ],
@@ -121,147 +111,110 @@ class HelpCenterView extends GetView<HelpCenterController> {
     );
   }
 
-  Widget _buildFAQItem(
-    ThemeData theme,
-    ColorScheme colorScheme,
-    FAQ faq,
-    int index,
-  ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Theme(
-        data: Theme.of(Get.context!).copyWith(
-          splashColor: Colors.transparent,
-        ),
-        child: ExpansionTile(
-          onExpansionChanged: (isExpanded) {
-            controller.toggleFAQ(index);
-          },
-          title: Text(
-            faq.question,
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          trailing: Icon(
-            faq.isExpanded.value ? Icons.expand_less : Icons.expand_more,
-            color: colorScheme.primary,
-          ),
-          initiallyExpanded: faq.isExpanded.value,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                faq.answer,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.8),
-                  height: 1.5,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContactSupportSection(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildFAQSection(bool isDark, ColorScheme colorScheme) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Hubungi Kami',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildContactOption(
-            theme,
-            colorScheme,
-            Icons.email_outlined,
-            'Email',
-            'support@89secondstuff.com',
-          ),
+          Text('FAQ'.toUpperCase(), style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: isDark ? AppTheme.accentMustard.withValues(alpha: 0.7) : colorScheme.onSurface.withValues(alpha: 0.5))),
           const SizedBox(height: 12),
-          _buildContactOption(
-            theme,
-            colorScheme,
-            Icons.phone_outlined,
-            'WhatsApp',
-            '+62 812-3456-7890',
-          ),
-          const SizedBox(height: 12),
-          _buildContactOption(
-            theme,
-            colorScheme,
-            Icons.location_on_outlined,
-            'Lokasi',
-            'Malang, Jawa Timur',
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: controller.faqs.length,
+            itemBuilder: (context, index) {
+              final faq = controller.faqs[index];
+              return Obx(() => _buildFAQItem(faq, index, isDark, colorScheme));
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildContactOption(
-    ThemeData theme,
-    ColorScheme colorScheme,
-    IconData icon,
-    String label,
-    String value,
-  ) {
+  Widget _buildFAQItem(FAQ faq, int index, bool isDark, ColorScheme colorScheme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        gradient: isDark ? LinearGradient(colors: [AppTheme.deepPurpleLight.withValues(alpha: 0.3), AppTheme.deepPurpleDark.withValues(alpha: 0.5)]) : null,
+        color: isDark ? null : colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? AppTheme.glowPurple.withValues(alpha: 0.2) : colorScheme.outline.withValues(alpha: 0.1)),
+      ),
+      child: Theme(
+        data: Theme.of(Get.context!).copyWith(splashColor: Colors.transparent, dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          onExpansionChanged: (_) => controller.toggleFAQ(index),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          title: Text(faq.question, style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14, color: isDark ? Colors.white : colorScheme.onSurface)),
+          trailing: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: isDark ? [AppTheme.accentMustard.withValues(alpha: 0.2), AppTheme.accentRed.withValues(alpha: 0.1)] : [colorScheme.primary.withValues(alpha: 0.1), colorScheme.primary.withValues(alpha: 0.05)]),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(faq.isExpanded.value ? Icons.expand_less : Icons.expand_more, color: isDark ? AppTheme.accentMustard : colorScheme.primary, size: 20),
+          ),
+          initiallyExpanded: faq.isExpanded.value,
+          children: [
+            Text(faq.answer, style: GoogleFonts.poppins(fontSize: 13, height: 1.6, color: isDark ? Colors.white70 : colorScheme.onSurface.withValues(alpha: 0.7))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContactSection(bool isDark, ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('HUBUNGI KAMI', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: isDark ? AppTheme.accentMustard.withValues(alpha: 0.7) : colorScheme.onSurface.withValues(alpha: 0.5))),
+          const SizedBox(height: 12),
+          _buildContactItem(Icons.email_outlined, 'Email', 'support@89secondstuff.com', isDark, colorScheme),
+          const SizedBox(height: 12),
+          _buildContactItem(Icons.phone_outlined, 'WhatsApp', '+62 812-3456-7890', isDark, colorScheme),
+          const SizedBox(height: 12),
+          _buildContactItem(Icons.location_on_outlined, 'Lokasi', 'Malang, Jawa Timur', isDark, colorScheme),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactItem(IconData icon, String label, String value, bool isDark, ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.primary.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colorScheme.primary.withOpacity(0.2),
-        ),
+        gradient: isDark ? LinearGradient(colors: [AppTheme.deepPurpleLight.withValues(alpha: 0.3), AppTheme.deepPurpleDark.withValues(alpha: 0.5)]) : null,
+        color: isDark ? null : colorScheme.primary.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? AppTheme.glowPurple.withValues(alpha: 0.2) : colorScheme.primary.withValues(alpha: 0.15)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              gradient: LinearGradient(colors: isDark ? [AppTheme.accentMustard.withValues(alpha: 0.2), AppTheme.accentRed.withValues(alpha: 0.1)] : [colorScheme.primary.withValues(alpha: 0.12), colorScheme.primary.withValues(alpha: 0.05)]),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              color: colorScheme.primary,
-              size: 20,
-            ),
+            child: Icon(icon, color: isDark ? AppTheme.accentMustard : colorScheme.primary, size: 22),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
+                Text(label, style: GoogleFonts.poppins(fontSize: 11, color: isDark ? Colors.white54 : colorScheme.onSurface.withValues(alpha: 0.5))),
+                const SizedBox(height: 2),
+                Text(value, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? Colors.white : colorScheme.onSurface)),
               ],
             ),
           ),
+          Icon(Icons.chevron_right, color: isDark ? Colors.white30 : colorScheme.onSurface.withValues(alpha: 0.3)),
         ],
       ),
     );

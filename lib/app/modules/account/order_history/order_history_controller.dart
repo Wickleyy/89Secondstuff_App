@@ -1,24 +1,24 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
-class Order {
-  final String id;
-  final String date;
-  final double total;
-  final String status;
-  final int itemCount;
-
-  Order({
-    required this.id,
-    required this.date,
-    required this.total,
-    required this.status,
-    required this.itemCount,
-  });
-}
+import 'package:_89_secondstufff/app/data/models/order_model.dart';
+import 'package:_89_secondstufff/app/data/services/order_service.dart';
 
 class OrderHistoryController extends GetxController {
+  final OrderService _orderService = Get.find<OrderService>();
+  
   var orders = <Order>[].obs;
   var isLoading = false.obs;
+  var selectedFilter = 'all'.obs;
+
+  final List<Map<String, String>> filterOptions = [
+    {'value': 'all', 'label': 'Semua'},
+    {'value': 'pending', 'label': 'Menunggu'},
+    {'value': 'paid', 'label': 'Dibayar'},
+    {'value': 'processing', 'label': 'Diproses'},
+    {'value': 'shipped', 'label': 'Dikirim'},
+    {'value': 'delivered', 'label': 'Selesai'},
+    {'value': 'cancelled', 'label': 'Dibatalkan'},
+  ];
 
   @override
   void onInit() {
@@ -26,58 +26,93 @@ class OrderHistoryController extends GetxController {
     loadOrders();
   }
 
-  void loadOrders() async {
+  Future<void> loadOrders() async {
     isLoading.value = true;
     try {
-      await Future.delayed(const Duration(seconds: 1));
-
-      orders.assignAll([
-        Order(
-          id: 'ORD-001',
-          date: '25 Oktober 2024',
-          total: 450000,
-          status: 'Delivered',
-          itemCount: 3,
-        ),
-        Order(
-          id: 'ORD-002',
-          date: '20 Oktober 2024',
-          total: 250000,
-          status: 'Processing',
-          itemCount: 2,
-        ),
-        Order(
-          id: 'ORD-003',
-          date: '15 Oktober 2024',
-          total: 150000,
-          status: 'Shipped',
-          itemCount: 1,
-        ),
-        Order(
-          id: 'ORD-004',
-          date: '10 Oktober 2024',
-          total: 320000,
-          status: 'Delivered',
-          itemCount: 4,
-        ),
-      ]);
+      final result = await _orderService.getUserOrders();
+      orders.assignAll(result);
     } catch (e) {
-      Get.snackbar('Error', 'Gagal memuat riwayat pesanan');
+      Get.snackbar(
+        'Error', 
+        'Gagal memuat riwayat pesanan',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     } finally {
       isLoading.value = false;
     }
   }
 
-  String getStatusColor(String status) {
+  List<Order> get filteredOrders {
+    if (selectedFilter.value == 'all') {
+      return orders;
+    }
+    return orders.where((o) => o.status == selectedFilter.value).toList();
+  }
+
+  void setFilter(String filter) {
+    selectedFilter.value = filter;
+  }
+
+  Color getStatusColor(String status) {
     switch (status) {
-      case 'Delivered':
-        return 'Terkirim';
-      case 'Shipped':
-        return 'Dalam Pengiriman';
-      case 'Processing':
+      case 'pending':
+        return Colors.orange;
+      case 'paid':
+        return Colors.blue;
+      case 'processing':
+        return Colors.purple;
+      case 'shipped':
+        return Colors.indigo;
+      case 'delivered':
+        return Colors.green;
+      case 'cancelled':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String getStatusText(String status) {
+    switch (status) {
+      case 'pending':
+        return 'Menunggu Pembayaran';
+      case 'paid':
+        return 'Dibayar';
+      case 'processing':
         return 'Diproses';
+      case 'shipped':
+        return 'Dikirim';
+      case 'delivered':
+        return 'Selesai';
+      case 'cancelled':
+        return 'Dibatalkan';
       default:
         return status;
     }
+  }
+
+  IconData getStatusIcon(String status) {
+    switch (status) {
+      case 'pending':
+        return Icons.access_time;
+      case 'paid':
+        return Icons.payment;
+      case 'processing':
+        return Icons.inventory;
+      case 'shipped':
+        return Icons.local_shipping;
+      case 'delivered':
+        return Icons.check_circle;
+      case 'cancelled':
+        return Icons.cancel;
+      default:
+        return Icons.help;
+    }
+  }
+
+  Future<void> refreshOrders() async {
+    await loadOrders();
   }
 }

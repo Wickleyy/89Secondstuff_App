@@ -1,9 +1,8 @@
-import 'dart:async'; // Diperlukan untuk StreamSubscription
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:_89_secondstufff/app/data/models/message_model.dart';
 import 'package:_89_secondstufff/app/data/services/supabase_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // Import ini PENTING
 
 class ChatController extends GetxController {
   final TextEditingController textController = TextEditingController();

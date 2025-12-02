@@ -2,48 +2,46 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:_89_secondstufff/app/modules/auth/auth_controller.dart';
+import 'package:_89_secondstufff/app/themes/app_theme.dart';
 
 class LoginView extends GetView<AuthController> {
-  const LoginView({Key? key}) : super(key: key);
+  const LoginView({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Animated spacing when keyboard is open
-                SizedBox(height: isKeyboardOpen ? 20 : 60),
-
-                // Logo Section
-                _buildLogoSection(theme, colorScheme),
-                SizedBox(height: isKeyboardOpen ? 20 : 50),
-
-                // Form Section
-                _buildFormSection(theme, colorScheme),
-                SizedBox(height: isKeyboardOpen ? 20 : 30),
-
-                // Social Login
-                if (!isKeyboardOpen) ...[
-                  _buildDivider(theme, colorScheme),
-                  const SizedBox(height: 20),
-                  _buildSocialLoginButtons(theme, colorScheme),
-                  const SizedBox(height: 30),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppTheme.deepPurpleDark, Color(0xFF251742), AppTheme.deepPurpleDark])
+              : LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [colorScheme.surface, colorScheme.surface]),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+                  SizedBox(height: isKeyboardOpen ? 20 : 50),
+                  _buildLogoSection(isDark, colorScheme),
+                  SizedBox(height: isKeyboardOpen ? 30 : 50),
+                  _buildFormSection(isDark, colorScheme),
+                  SizedBox(height: isKeyboardOpen ? 20 : 30),
+                  if (!isKeyboardOpen) ...[
+                    _buildDivider(isDark, colorScheme),
+                    const SizedBox(height: 24),
+                    _buildSocialLoginButtons(isDark, colorScheme),
+                    const SizedBox(height: 30),
+                  ],
+                  _buildSignUpSection(isDark, colorScheme),
+                  SizedBox(height: isKeyboardOpen ? 20 : 40),
                 ],
-
-                // Sign Up Link
-                _buildSignUpSection(theme, colorScheme),
-                SizedBox(height: isKeyboardOpen ? 20 : 40), // Spacing di bawah
-              ],
+              ),
             ),
           ),
         ),
@@ -51,403 +49,204 @@ class LoginView extends GetView<AuthController> {
     );
   }
 
-  // Logo & Title Section
-  Widget _buildLogoSection(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildLogoSection(bool isDark, ColorScheme colorScheme) {
     return Column(
       children: [
-        // Logo/Icon Container
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                colorScheme.primary,
-                colorScheme.primary.withOpacity(0.7),
-              ],
+              colors: isDark ? [AppTheme.deepPurpleLight, AppTheme.deepPurpleDark] : [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.7)],
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: isDark ? [BoxShadow(color: AppTheme.glowPurple.withValues(alpha: 0.4), blurRadius: 20, spreadRadius: 2)] : [BoxShadow(color: colorScheme.primary.withValues(alpha: 0.3), blurRadius: 16)],
           ),
-          child: Icon(
-            Icons.shopping_bag_outlined,
-            size: 48,
-            color: colorScheme.onPrimary,
-          ),
+          child: Icon(Icons.shopping_bag_outlined, size: 52, color: isDark ? AppTheme.accentMustard : Colors.white),
         ),
-        const SizedBox(height: 24),
-        // App Name
-        Text(
-          '89secondStuff',
-          style: GoogleFonts.poppins(
-            fontSize: 32,
-            fontWeight: FontWeight.w700,
-            color: colorScheme.primary,
-          ),
+        const SizedBox(height: 28),
+        ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(colors: isDark ? [AppTheme.accentMustard, AppTheme.accentRed] : [colorScheme.primary, colorScheme.secondary]).createShader(bounds),
+          child: Text('89secondStuff', style: GoogleFonts.poppins(fontSize: 32, fontWeight: FontWeight.w700, color: Colors.white)),
         ),
         const SizedBox(height: 8),
-        // Tagline
-        Text(
-          'Welcome back, find your style!',
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: colorScheme.onSurface.withOpacity(0.7),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        Text('Welcome back, find your style!', style: GoogleFonts.poppins(fontSize: 15, color: isDark ? Colors.white60 : colorScheme.onSurface.withValues(alpha: 0.6))),
       ],
     );
   }
 
-  // Form Section
-  Widget _buildFormSection(ThemeData theme, ColorScheme colorScheme) {
-    return Column(
-      children: [
-        // --- PERBAIKAN 1: Mengganti Username ke Email ---
-        _buildTextFieldWithIcon(
-          controller: controller.emailController, // <-- DARI emailController
-          label: 'Email', // <-- Label diubah
-          hint: 'Masukkan email Anda', // <-- Hint diubah
-          icon: Icons.email_outlined, // <-- Ikon diubah
-          theme: theme,
-          colorScheme: colorScheme,
-          obscure: false,
-          keyboardType: TextInputType
-              .emailAddress, // <-- Ditambahkan untuk keyboard email
-        ),
-        const SizedBox(height: 20),
-
-        // Password TextField
-        Obx(() => _buildTextFieldWithIcon(
-              controller: controller.passwordController,
-              label: 'Password',
-              hint: 'Masukkan password Anda',
-              icon: Icons.lock_outline,
-              theme: theme,
-              colorScheme: colorScheme,
-              obscure: controller.isLoginPasswordHidden.value, // Bind ke state
-              isPasswordField: true, // Tandai sebagai password
-              onToggleVisibility: controller.toggleLoginPasswordVisibility,
-            )),
-
-        const SizedBox(height: 12),
-
-        // Remember Me & Forgot Password Row
-        _buildRememberForgotRow(theme, colorScheme),
-        const SizedBox(height: 30),
-
-        // --- PERBAIKAN 2: Menghubungkan ke state & method Supabase ---
-        Obx(
-          () => SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed:
-                  controller.isLoadingLogin.value // <-- DARI isLoadingLogin
-                      ? null
-                      : controller.signInWithEmail, // <-- DARI signInWithEmail
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+  Widget _buildFormSection(bool isDark, ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: isDark ? LinearGradient(colors: [AppTheme.deepPurpleLight.withValues(alpha: 0.4), AppTheme.deepPurpleDark.withValues(alpha: 0.6)]) : null,
+        color: isDark ? null : colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: isDark ? AppTheme.glowPurple.withValues(alpha: 0.3) : colorScheme.outline.withValues(alpha: 0.1)),
+        boxShadow: isDark ? [BoxShadow(color: AppTheme.glowPurple.withValues(alpha: 0.2), blurRadius: 16)] : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20)],
+      ),
+      child: Column(
+        children: [
+          _buildTextField(controller.emailController, 'Email', 'Masukkan email Anda', Icons.email_outlined, false, isDark, colorScheme, keyboardType: TextInputType.emailAddress),
+          const SizedBox(height: 20),
+          Obx(() => _buildTextField(controller.passwordController, 'Password', 'Masukkan password', Icons.lock_outline, controller.isLoginPasswordHidden.value, isDark, colorScheme, isPassword: true, onToggle: controller.toggleLoginPasswordVisibility)),
+          const SizedBox(height: 16),
+          _buildRememberForgotRow(isDark, colorScheme),
+          const SizedBox(height: 24),
+          Obx(() => SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: controller.isLoadingLogin.value ? null : controller.signInWithEmail,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isDark ? AppTheme.accentMustard : colorScheme.primary,
+                    foregroundColor: isDark ? AppTheme.deepPurpleDark : colorScheme.onPrimary,
+                    disabledBackgroundColor: (isDark ? AppTheme.accentMustard : colorScheme.primary).withValues(alpha: 0.5),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: isDark ? 8 : 2,
+                    shadowColor: isDark ? AppTheme.accentMustard.withValues(alpha: 0.5) : null,
+                  ),
+                  child: controller.isLoadingLogin.value
+                      ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : Text('LOGIN', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700)),
                 ),
-                elevation: 2,
-              ),
-              child: controller.isLoadingLogin.value // <-- DARI isLoadingLogin
-                  ? SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        color: colorScheme.onPrimary,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Text(
-                      'LOGIN',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
-          ),
-        ),
-      ],
+              )),
+        ],
+      ),
     );
   }
 
-  // Reusable TextField with Icon
-  Widget _buildTextFieldWithIcon({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    required ThemeData theme,
-    required ColorScheme colorScheme,
-    required bool obscure,
-    TextInputType keyboardType = TextInputType.text, // <-- Default
-    bool isPasswordField = false,
-    VoidCallback? onToggleVisibility,
-  }) {
+  Widget _buildTextField(TextEditingController textController, String label, String hint, IconData icon, bool obscure, bool isDark, ColorScheme colorScheme, {TextInputType keyboardType = TextInputType.text, bool isPassword = false, VoidCallback? onToggle}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface,
+        Text(label, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white : colorScheme.onSurface)),
+        const SizedBox(height: 10),
+        Container(
+          decoration: BoxDecoration(
+            gradient: isDark ? LinearGradient(colors: [AppTheme.deepPurpleLight.withValues(alpha: 0.3), AppTheme.deepPurpleDark.withValues(alpha: 0.5)]) : null,
+            color: isDark ? null : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: isDark ? AppTheme.glowPurple.withValues(alpha: 0.2) : colorScheme.outline.withValues(alpha: 0.2)),
           ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          obscureText: obscure,
-          keyboardType: keyboardType, // <-- Digunakan di sini
-          decoration: InputDecoration(
-            hintText: hint,
-            prefixIcon: Icon(
-              icon,
-              color: colorScheme.primary.withOpacity(0.7),
-            ),
-            suffixIcon: isPasswordField
-                ? IconButton(
-                    icon: Icon(
-                      obscure
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                      color: colorScheme.onSurface.withOpacity(0.5),
-                    ),
-                    onPressed: onToggleVisibility,
-                  )
-                : null,
-            filled: true,
-            fillColor: colorScheme.background.withOpacity(0.5),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: colorScheme.outline.withOpacity(0.3),
+          child: TextField(
+            controller: textController,
+            obscureText: obscure,
+            keyboardType: keyboardType,
+            style: GoogleFonts.poppins(color: isDark ? Colors.white : colorScheme.onSurface),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: GoogleFonts.poppins(color: isDark ? Colors.white38 : colorScheme.onSurface.withValues(alpha: 0.4)),
+              prefixIcon: Container(
+                margin: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: isDark ? [AppTheme.accentMustard.withValues(alpha: 0.2), AppTheme.accentRed.withValues(alpha: 0.1)] : [colorScheme.primary.withValues(alpha: 0.12), colorScheme.primary.withValues(alpha: 0.05)]),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: isDark ? AppTheme.accentMustard : colorScheme.primary, size: 20),
               ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: colorScheme.outline.withOpacity(0.3),
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: colorScheme.primary,
-                width: 2,
-              ),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
+              suffixIcon: isPassword
+                  ? IconButton(
+                      icon: Icon(obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: isDark ? Colors.white38 : colorScheme.onSurface.withValues(alpha: 0.4)),
+                      onPressed: onToggle,
+                    )
+                  : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),
           ),
-          style: theme.textTheme.bodyLarge,
         ),
       ],
     );
   }
 
-  // Remember Me & Forgot Password
-  Widget _buildRememberForgotRow(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildRememberForgotRow(bool isDark, ColorScheme colorScheme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           children: [
             SizedBox(
-              width: 20,
-              height: 20,
+              width: 22,
+              height: 22,
               child: Checkbox(
                 value: false,
-                onChanged: (value) {},
-                activeColor: colorScheme.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
+                onChanged: (v) {},
+                activeColor: isDark ? AppTheme.accentMustard : colorScheme.primary,
+                side: BorderSide(color: isDark ? Colors.white38 : colorScheme.outline.withValues(alpha: 0.4)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
               ),
             ),
             const SizedBox(width: 8),
-            Text(
-              'Remember me',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurface.withOpacity(0.7),
-              ),
-            ),
+            Text('Remember me', style: GoogleFonts.poppins(fontSize: 12, color: isDark ? Colors.white60 : colorScheme.onSurface.withValues(alpha: 0.6))),
           ],
         ),
         TextButton(
-          onPressed: () {
-            Get.snackbar(
-              'Info',
-              'Fitur Forgot Password belum tersedia',
-              snackPosition: SnackPosition.BOTTOM,
-            );
-          },
-          child: Text(
-            'Forgot Password?',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          onPressed: () => Get.snackbar('Info', 'Fitur Forgot Password belum tersedia', snackPosition: SnackPosition.BOTTOM, backgroundColor: isDark ? AppTheme.deepPurpleLight : null, colorText: isDark ? Colors.white : null),
+          child: Text('Forgot Password?', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? AppTheme.accentMustard : colorScheme.primary)),
         ),
       ],
     );
   }
 
-  // Divider dengan Text
-  Widget _buildDivider(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildDivider(bool isDark, ColorScheme colorScheme) {
     return Row(
       children: [
-        Expanded(
-          child: Divider(
-            color: colorScheme.outline.withOpacity(0.3),
-          ),
-        ),
+        Expanded(child: Divider(color: isDark ? Colors.white12 : colorScheme.outline.withValues(alpha: 0.2))),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'atau',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
+          child: Text('atau', style: GoogleFonts.poppins(fontSize: 12, color: isDark ? Colors.white38 : colorScheme.onSurface.withValues(alpha: 0.5))),
         ),
-        Expanded(
-          child: Divider(
-            color: colorScheme.outline.withOpacity(0.3),
-          ),
-        ),
+        Expanded(child: Divider(color: isDark ? Colors.white12 : colorScheme.outline.withValues(alpha: 0.2))),
       ],
     );
   }
 
-  // Social Login Buttons
-  Widget _buildSocialLoginButtons(ThemeData theme, ColorScheme colorScheme) {
-    return Column(
+  Widget _buildSocialLoginButtons(bool isDark, ColorScheme colorScheme) {
+    return Row(
       children: [
-        Text(
-          'Masuk dengan',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurface.withOpacity(0.6),
-          ),
+        Expanded(child: _buildSocialButton('G', 'Google', Icons.g_mobiledata, isDark, colorScheme)),
+        const SizedBox(width: 16),
+        Expanded(child: _buildSocialButton('', 'Apple', Icons.apple, isDark, colorScheme)),
+      ],
+    );
+  }
+
+  Widget _buildSocialButton(String symbol, String label, IconData icon, bool isDark, ColorScheme colorScheme) {
+    return InkWell(
+      onTap: () => Get.snackbar('Info', '$label Login belum tersedia', snackPosition: SnackPosition.BOTTOM, backgroundColor: isDark ? AppTheme.deepPurpleLight : null, colorText: isDark ? Colors.white : null),
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          gradient: isDark ? LinearGradient(colors: [AppTheme.deepPurpleLight.withValues(alpha: 0.3), AppTheme.deepPurpleDark.withValues(alpha: 0.4)]) : null,
+          color: isDark ? null : colorScheme.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: isDark ? AppTheme.glowPurple.withValues(alpha: 0.3) : colorScheme.outline.withValues(alpha: 0.2)),
         ),
-        const SizedBox(height: 12),
-        Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildSocialButton(
-              theme,
-              colorScheme,
-              'G', // Simbol 'G' standar
-              'Google',
-              () {
-                Get.snackbar(
-                  'Info',
-                  'Google Login belum tersedia',
-                  snackPosition: SnackPosition.BOTTOM,
-                );
-              },
-            ),
-            const SizedBox(width: 16),
-            _buildSocialButton(
-              theme,
-              colorScheme,
-              '', // Simbol Apple
-              'Apple',
-              () {
-                Get.snackbar(
-                  'Info',
-                  'Apple Login belum tersedia',
-                  snackPosition: SnackPosition.BOTTOM,
-                );
-              },
-            ),
+            Icon(icon, color: isDark ? Colors.white70 : colorScheme.onSurface, size: 24),
+            const SizedBox(width: 8),
+            Text(label, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: isDark ? Colors.white70 : colorScheme.onSurface.withValues(alpha: 0.7))),
           ],
-        ),
-      ],
-    );
-  }
-
-  // Social Button Component
-  Widget _buildSocialButton(
-    ThemeData theme,
-    ColorScheme colorScheme,
-    String symbol,
-    String label,
-    VoidCallback onTap,
-  ) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: colorScheme.outline.withOpacity(0.3),
-              width: 1.5,
-            ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                symbol,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: colorScheme.onSurface,
-                  fontWeight: FontWeight.bold, // Ditebalkan
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.7),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
   }
 
-  // Sign Up Section
-  Widget _buildSignUpSection(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildSignUpSection(bool isDark, ColorScheme colorScheme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
-          "Belum punya akun? ",
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurface.withOpacity(0.7),
-          ),
-        ),
+        Text('Belum punya akun? ', style: GoogleFonts.poppins(fontSize: 14, color: isDark ? Colors.white60 : colorScheme.onSurface.withValues(alpha: 0.6))),
         TextButton(
           onPressed: controller.goToSignUp,
-          style: TextButton.styleFrom(
-            padding: EdgeInsets.zero,
-            minimumSize: const Size(0, 0),
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-          child: Text(
-            'Daftar di sini',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.primary,
-              decoration: TextDecoration.underline,
-            ),
-          ),
+          style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+          child: Text('Daftar di sini', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: isDark ? AppTheme.accentMustard : colorScheme.primary, decoration: TextDecoration.underline, decorationColor: isDark ? AppTheme.accentMustard : colorScheme.primary)),
         ),
       ],
     );

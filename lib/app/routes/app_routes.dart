@@ -14,11 +14,18 @@ abstract class AppRoutes {
   static const ACCOUNT = _Paths.ACCOUNT;
   static const CHAT = _Paths.CHAT;
   static const CART = _Paths.CART;
+  static const CHECKOUT = _Paths.CHECKOUT;
+  static const PAYMENT_STATUS = _Paths.PAYMENT_STATUS;
+  static const WISHLIST = _Paths.WISHLIST;
+
+  // Settings
+  static const SETTINGS = _Paths.SETTINGS;
 
   // Account Sub Routes
   static const EDIT_PROFILE = _Paths.EDIT_PROFILE;
   static const ORDER_HISTORY = _Paths.ORDER_HISTORY;
   static const SHIPPING_ADDRESS = _Paths.SHIPPING_ADDRESS;
+  static const MAP_PICKER = _Paths.MAP_PICKER;
   static const NOTIFICATION_SETTINGS = _Paths.NOTIFICATION_SETTINGS;
   static const HELP_CENTER = _Paths.HELP_CENTER;
   static const PRIVACY_POLICY = _Paths.PRIVACY_POLICY;
@@ -45,11 +52,18 @@ abstract class _Paths {
   static const ACCOUNT = '/account';
   static const CHAT = '/chat';
   static const CART = '/cart';
+  static const CHECKOUT = '/checkout';
+  static const PAYMENT_STATUS = '/payment-status';
+  static const WISHLIST = '/wishlist';
+
+  // Settings
+  static const SETTINGS = '/settings';
 
   // Account Sub Routes
   static const EDIT_PROFILE = '/account/edit-profile';
   static const ORDER_HISTORY = '/account/order-history';
   static const SHIPPING_ADDRESS = '/account/shipping-address';
+  static const MAP_PICKER = '/account/map-picker';
   static const NOTIFICATION_SETTINGS = '/account/notification-settings';
   static const HELP_CENTER = '/account/help-center';
   static const PRIVACY_POLICY = '/account/privacy-policy';

@@ -7,39 +7,42 @@ import 'package:_89_secondstufff/app/routes/app_pages.dart';
 
 class HomeController extends GetxController {
   final ProductProvider _productProvider = Get.find<ProductProvider>();
-  final CarouselSliderController carouselController =
-      CarouselSliderController();
+  final CarouselSliderController carouselController = CarouselSliderController();
 
   var currentSliderIndex = 0.obs;
-  var sliderProducts = <String>[].obs;
+  
+  // Simpan produk lengkap (bukan hanya image) untuk carousel
+  var whatsNewProducts = <Product>[].obs;
   var isLoadingBanners = true.obs;
+  
   var featuredProductsGrid = <Product>[].obs;
   var isLoadingGrid = true.obs;
+
+  // Untuk backward compatibility
+  List<String> get sliderProducts => whatsNewProducts.map((p) => p.image).toList();
 
   @override
   void onInit() {
     super.onInit();
-    fetchSliderProducts();
+    fetchWhatsNewProducts();
     fetchFeaturedGrid();
   }
 
-  void fetchSliderProducts() async {
+  // Fetch produk terbaru untuk What's New (dari semua kategori, limit 5)
+  void fetchWhatsNewProducts() async {
     try {
-      var products = await _productProvider.getProductsByCategoryName(
-          "Celana", // Pastikan 'electronics' ada di tabel categories Anda
-          limit: 2);
+      isLoadingBanners.value = true;
+      
+      // Ambil semua produk, lalu ambil 5 terbaru
+      var products = await _productProvider.getAllProducts();
+      
       if (products.isNotEmpty) {
-        sliderProducts.assignAll(products.map((p) => p.image).toList());
+        // Ambil 5 produk pertama (terbaru) untuk carousel
+        final latestProducts = products.take(5).toList();
+        whatsNewProducts.assignAll(latestProducts);
       }
     } catch (e) {
-      print("Error fetch slider products: $e");
-      Get.snackbar(
-        "Error",
-        "Gagal memuat banner: $e",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      debugPrint("Error fetch what's new products: $e");
     } finally {
       isLoadingBanners.value = false;
     }
@@ -48,19 +51,23 @@ class HomeController extends GetxController {
   void fetchFeaturedGrid() async {
     try {
       isLoadingGrid.value = true;
-      var products = await _productProvider.getProductsByCategoryName(
-          "Jaket & Hoodie", // Pastikan 'jewelery' ada di tabel categories Anda
-          limit: 2);
-      featuredProductsGrid.assignAll(products);
+      
+      // Ambil semua produk untuk grid
+      var products = await _productProvider.getAllProducts();
+      
+      if (products.isNotEmpty) {
+        // Skip 5 produk pertama (yang sudah di carousel), ambil sisanya
+        final gridProducts = products.skip(5).take(10).toList();
+        
+        // Jika tidak cukup, ambil dari awal
+        if (gridProducts.isEmpty) {
+          featuredProductsGrid.assignAll(products.take(10).toList());
+        } else {
+          featuredProductsGrid.assignAll(gridProducts);
+        }
+      }
     } catch (e) {
-      print("Error fetch featured grid: $e");
-      Get.snackbar(
-        "Error",
-        "Gagal memuat produk: $e",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      debugPrint("Error fetch featured grid: $e");
     } finally {
       isLoadingGrid.value = false;
     }
@@ -70,7 +77,22 @@ class HomeController extends GetxController {
     currentSliderIndex.value = index;
   }
 
+  // Navigate ke product detail dari carousel
+  void onWhatsNewTap(int index) {
+    if (index >= 0 && index < whatsNewProducts.length) {
+      Get.toNamed(AppRoutes.PRODUCT_DETAIL, arguments: whatsNewProducts[index]);
+    }
+  }
+
   void onProductTap(Product product) {
     Get.toNamed(AppRoutes.PRODUCT_DETAIL, arguments: product);
+  }
+
+  // Refresh semua data
+  Future<void> refreshData() async {
+    await Future.wait([
+      Future(() => fetchWhatsNewProducts()),
+      Future(() => fetchFeaturedGrid()),
+    ]);
   }
 }

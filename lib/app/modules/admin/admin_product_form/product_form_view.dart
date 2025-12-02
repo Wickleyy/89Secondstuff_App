@@ -1,304 +1,233 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:_89_secondstufff/app/themes/app_theme.dart';
 import 'product_form_controller.dart';
-import 'dart:io'; // Perlu import ini untuk File Image
 
 class AdminProductFormView extends GetView<AdminProductFormController> {
-  const AdminProductFormView({Key? key}) : super(key: key);
+  const AdminProductFormView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // --- PALET WARNA ---
-    final Color backgroundColor = const Color(0xFFFFF6E5); // Krem
-    final Color primaryColor = const Color(0xFFD87C34); // Oranye Bata
-    final Color textDark = const Color(0xFF4E342E); // Coklat Tua
-    final Color inputFillColor = Colors.white;
-
-    // Style umum untuk Input Field
-    InputDecoration customInputDecoration(String label, {String? prefix}) {
-      return InputDecoration(
-        labelText: label,
-        labelStyle: GoogleFonts.poppins(color: Colors.grey[600]),
-        prefixText: prefix,
-        prefixStyle:
-            GoogleFonts.poppins(color: textDark, fontWeight: FontWeight.bold),
-        filled: true,
-        fillColor: inputFillColor,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none, // Hilangkan garis border default
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: primaryColor, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
-        ),
-      );
-    }
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: textDark),
-          onPressed: () => Get.back(),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppTheme.deepPurpleDark, Color(0xFF251742), AppTheme.deepPurpleDark])
+              : const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFFFFF6E5), Color(0xFFFFF9F0)]),
         ),
-        title: Text(
-          controller.productToEdit == null ? 'Tambah Produk' : 'Edit Produk',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            color: textDark,
-            fontSize: 20,
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildAppBar(isDark),
+              Expanded(
+                child: Obx(() {
+                  if (controller.isLoading.value) {
+                    return Center(child: CircularProgressIndicator(color: isDark ? AppTheme.accentMustard : const Color(0xFFD87C34)));
+                  }
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    physics: const BouncingScrollPhysics(),
+                    child: Form(
+                      key: controller.formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildImageSection(isDark),
+                          const SizedBox(height: 32),
+                          Text('INFORMASI PRODUK', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: isDark ? AppTheme.accentMustard.withValues(alpha: 0.7) : Colors.brown.withValues(alpha: 0.5))),
+                          const SizedBox(height: 16),
+                          _buildTextField(controller.titleC, 'Nama Produk', Icons.label_outline, isDark, validator: (v) => v == null || v.isEmpty ? 'Nama wajib diisi' : null),
+                          const SizedBox(height: 16),
+                          _buildTextField(controller.priceC, 'Harga', Icons.attach_money, isDark, prefix: 'Rp ', keyboardType: TextInputType.number, validator: (v) => v == null || v.isEmpty ? 'Harga wajib diisi' : null),
+                          const SizedBox(height: 16),
+                          _buildCategoryDropdown(isDark),
+                          const SizedBox(height: 16),
+                          _buildTextField(controller.descriptionC, 'Deskripsi Produk', Icons.description_outlined, isDark, maxLines: 4, validator: (v) => v == null || v.isEmpty ? 'Deskripsi wajib diisi' : null),
+                          const SizedBox(height: 40),
+                          _buildSaveButton(isDark),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ],
           ),
         ),
-        centerTitle: true,
       ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return Center(child: CircularProgressIndicator(color: primaryColor));
-        }
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          physics: const BouncingScrollPhysics(),
-          child: Form(
-            key: controller.formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // --- BAGIAN GAMBAR ---
-                Center(
-                  child: GestureDetector(
-                    onTap: controller.pickImage,
-                    child: Stack(
-                      children: [
-                        // Container Gambar Utama
-                        Container(
-                          width: 160,
-                          height: 160,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(24),
-                            child: _buildImagePreview(primaryColor),
-                          ),
-                        ),
-                        // Ikon Kamera Kecil (Badge)
-                        Positioned(
-                          bottom: 8,
-                          right: 8,
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: primaryColor,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: const Icon(Icons.camera_alt,
-                                color: Colors.white, size: 18),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Center(
-                  child: Text(
-                    'Upload Foto Produk',
-                    style: GoogleFonts.poppins(
-                        color: Colors.grey[600], fontSize: 12),
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // --- NAMA PRODUK ---
-                Text('Informasi Produk',
-                    style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.bold,
-                        color: textDark,
-                        fontSize: 16)),
-                const SizedBox(height: 16),
-
-                Container(
-                  decoration: BoxDecoration(boxShadow: [
-                    BoxShadow(
-                        color: Colors.grey.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4))
-                  ]),
-                  child: TextFormField(
-                    controller: controller.titleC,
-                    style: GoogleFonts.poppins(color: textDark),
-                    decoration: customInputDecoration('Nama Produk'),
-                    validator: (value) => value == null || value.isEmpty
-                        ? 'Nama wajib diisi'
-                        : null,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // --- HARGA ---
-                Container(
-                  decoration: BoxDecoration(boxShadow: [
-                    BoxShadow(
-                        color: Colors.grey.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4))
-                  ]),
-                  child: TextFormField(
-                    controller: controller.priceC,
-                    style: GoogleFonts.poppins(color: textDark),
-                    decoration: customInputDecoration('Harga', prefix: 'Rp '),
-                    keyboardType: TextInputType.number,
-                    validator: (value) => value == null || value.isEmpty
-                        ? 'Harga wajib diisi'
-                        : null,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // --- KATEGORI DROPDOWN ---
-                Container(
-                  decoration: BoxDecoration(boxShadow: [
-                    BoxShadow(
-                        color: Colors.grey.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4))
-                  ]),
-                  child: DropdownButtonFormField<int>(
-                    value: controller.selectedCategoryId.value,
-                    style: GoogleFonts.poppins(color: textDark),
-                    icon: Icon(Icons.keyboard_arrow_down_rounded,
-                        color: primaryColor),
-                    decoration: customInputDecoration('Pilih Kategori'),
-                    dropdownColor: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    items: controller.categories.map((cat) {
-                      return DropdownMenuItem(
-                        value: cat.id,
-                        child: Text(cat.name),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      controller.selectedCategoryId.value = value;
-                    },
-                    validator: (value) {
-                      if (controller.productToEdit == null && value == null) {
-                        return 'Kategori wajib dipilih';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // --- DESKRIPSI ---
-                Container(
-                  decoration: BoxDecoration(boxShadow: [
-                    BoxShadow(
-                        color: Colors.grey.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4))
-                  ]),
-                  child: TextFormField(
-                    controller: controller.descriptionC,
-                    style: GoogleFonts.poppins(color: textDark),
-                    decoration:
-                        customInputDecoration('Deskripsi Produk').copyWith(
-                      alignLabelWithHint:
-                          true, // Agar label ada di pojok kiri atas textarea
-                    ),
-                    maxLines: 4,
-                    validator: (value) => value == null || value.isEmpty
-                        ? 'Deskripsi wajib diisi'
-                        : null,
-                  ),
-                ),
-                const SizedBox(height: 40),
-
-                // --- TOMBOL SIMPAN ---
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton(
-                    onPressed: controller.saveProduct,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      foregroundColor: Colors.white,
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      shadowColor: primaryColor.withOpacity(0.4),
-                    ),
-                    child: Text(
-                      'SIMPAN PRODUK',
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
-        );
-      }),
     );
   }
 
-  // Widget Preview Gambar yang lebih clean
-  Widget _buildImagePreview(Color primaryColor) {
+  Widget _buildAppBar(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: isDark ? LinearGradient(colors: [AppTheme.glowPurple.withValues(alpha: 0.3), AppTheme.deepPurpleLight.withValues(alpha: 0.3)]) : null,
+              color: isDark ? null : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: isDark ? null : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)],
+            ),
+            child: IconButton(icon: Icon(Icons.arrow_back_rounded, color: isDark ? AppTheme.accentMustard : const Color(0xFF4E342E)), onPressed: () => Get.back()),
+          ),
+          const SizedBox(width: 16),
+          Text(controller.productToEdit == null ? 'Tambah Produk' : 'Edit Produk', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF4E342E))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImageSection(bool isDark) {
+    return Center(
+      child: GestureDetector(
+        onTap: controller.pickImage,
+        child: Stack(
+          children: [
+            Container(
+              width: 160,
+              height: 160,
+              decoration: BoxDecoration(
+                gradient: isDark ? LinearGradient(colors: [AppTheme.deepPurpleLight.withValues(alpha: 0.5), AppTheme.deepPurpleDark.withValues(alpha: 0.7)]) : null,
+                color: isDark ? null : Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: isDark ? AppTheme.glowPurple.withValues(alpha: 0.3) : Colors.transparent),
+                boxShadow: [BoxShadow(color: isDark ? AppTheme.glowPurple.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.1), blurRadius: 12, offset: const Offset(0, 4))],
+              ),
+              child: ClipRRect(borderRadius: BorderRadius.circular(24), child: _buildImagePreview(isDark)),
+            ),
+            Positioned(
+              bottom: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: isDark ? [AppTheme.accentMustard, AppTheme.accentRed] : [const Color(0xFFD87C34), const Color(0xFFE59849)]),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: isDark ? AppTheme.deepPurpleDark : Colors.white, width: 3),
+                  boxShadow: [BoxShadow(color: (isDark ? AppTheme.accentMustard : const Color(0xFFD87C34)).withValues(alpha: 0.4), blurRadius: 8)],
+                ),
+                child: const Icon(Icons.camera_alt, color: Colors.white, size: 18),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagePreview(bool isDark) {
     if (controller.selectedImage.value != null) {
-      // Jika user baru saja memilih gambar dari galeri (File)
-      return Image.file(
-        controller.selectedImage.value!,
-        fit: BoxFit.cover,
-      );
+      return Image.file(controller.selectedImage.value!, fit: BoxFit.cover);
     } else if (controller.existingImageUrl.value.isNotEmpty) {
-      // Jika sedang edit dan sudah ada gambar sebelumnya (Network)
-      return Image.network(
-        controller.existingImageUrl.value,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Center(
-            child: Icon(Icons.broken_image, color: Colors.grey[400], size: 40)),
-      );
+      return Image.network(controller.existingImageUrl.value, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Center(child: Icon(Icons.broken_image, color: isDark ? Colors.white38 : Colors.grey[400], size: 40)));
     } else {
-      // Kosong
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.add_photo_alternate_outlined,
-              size: 50, color: Colors.grey[300]),
+          Icon(Icons.add_photo_alternate_outlined, size: 48, color: isDark ? Colors.white30 : Colors.grey[300]),
           const SizedBox(height: 8),
-          Text("Tambah Foto",
-              style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[400]))
+          Text('Tambah Foto', style: GoogleFonts.poppins(fontSize: 12, color: isDark ? Colors.white38 : Colors.grey[400])),
         ],
       );
     }
+  }
+
+  Widget _buildTextField(TextEditingController textController, String label, IconData icon, bool isDark, {String? prefix, int maxLines = 1, TextInputType keyboardType = TextInputType.text, String? Function(String?)? validator}) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: isDark ? LinearGradient(colors: [AppTheme.deepPurpleLight.withValues(alpha: 0.4), AppTheme.deepPurpleDark.withValues(alpha: 0.6)]) : null,
+        color: isDark ? null : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: isDark ? AppTheme.glowPurple.withValues(alpha: 0.2) : Colors.transparent),
+        boxShadow: isDark ? [BoxShadow(color: AppTheme.glowPurple.withValues(alpha: 0.1), blurRadius: 10)] : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
+      ),
+      child: TextFormField(
+        controller: textController,
+        maxLines: maxLines,
+        keyboardType: keyboardType,
+        style: GoogleFonts.poppins(color: isDark ? Colors.white : const Color(0xFF4E342E)),
+        validator: validator,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: GoogleFonts.poppins(color: isDark ? Colors.white54 : Colors.grey[600]),
+          prefixText: prefix,
+          prefixStyle: GoogleFonts.poppins(color: isDark ? AppTheme.accentMustard : const Color(0xFF4E342E), fontWeight: FontWeight.bold),
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: isDark ? [AppTheme.accentMustard.withValues(alpha: 0.2), AppTheme.accentRed.withValues(alpha: 0.1)] : [const Color(0xFFD87C34).withValues(alpha: 0.12), const Color(0xFFD87C34).withValues(alpha: 0.05)]),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: isDark ? AppTheme.accentMustard : const Color(0xFFD87C34), size: 20),
+          ),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: maxLines > 1 ? 16 : 0),
+          alignLabelWithHint: maxLines > 1,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryDropdown(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: isDark ? LinearGradient(colors: [AppTheme.deepPurpleLight.withValues(alpha: 0.4), AppTheme.deepPurpleDark.withValues(alpha: 0.6)]) : null,
+        color: isDark ? null : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: isDark ? AppTheme.glowPurple.withValues(alpha: 0.2) : Colors.transparent),
+        boxShadow: isDark ? [BoxShadow(color: AppTheme.glowPurple.withValues(alpha: 0.1), blurRadius: 10)] : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
+      ),
+      child: Obx(() => DropdownButtonFormField<int>(
+            initialValue: controller.selectedCategoryId.value,
+            style: GoogleFonts.poppins(color: isDark ? Colors.white : const Color(0xFF4E342E)),
+            icon: Icon(Icons.keyboard_arrow_down_rounded, color: isDark ? AppTheme.accentMustard : const Color(0xFFD87C34)),
+            dropdownColor: isDark ? AppTheme.deepPurpleLight : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            decoration: InputDecoration(
+              labelText: 'Pilih Kategori',
+              labelStyle: GoogleFonts.poppins(color: isDark ? Colors.white54 : Colors.grey[600]),
+              prefixIcon: Container(
+                margin: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: isDark ? [AppTheme.accentMustard.withValues(alpha: 0.2), AppTheme.accentRed.withValues(alpha: 0.1)] : [const Color(0xFFD87C34).withValues(alpha: 0.12), const Color(0xFFD87C34).withValues(alpha: 0.05)]),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(Icons.category_outlined, color: isDark ? AppTheme.accentMustard : const Color(0xFFD87C34), size: 20),
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+            ),
+            items: controller.categories.map((cat) => DropdownMenuItem(value: cat.id, child: Text(cat.name, style: GoogleFonts.poppins(color: isDark ? Colors.white : const Color(0xFF4E342E))))).toList(),
+            onChanged: (value) => controller.selectedCategoryId.value = value,
+            validator: (value) => controller.productToEdit == null && value == null ? 'Kategori wajib dipilih' : null,
+          )),
+    );
+  }
+
+  Widget _buildSaveButton(bool isDark) {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: controller.saveProduct,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isDark ? AppTheme.accentMustard : const Color(0xFFD87C34),
+          foregroundColor: isDark ? AppTheme.deepPurpleDark : Colors.white,
+          elevation: isDark ? 8 : 4,
+          shadowColor: (isDark ? AppTheme.accentMustard : const Color(0xFFD87C34)).withValues(alpha: 0.5),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        ),
+        child: Text('SIMPAN PRODUK', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1)),
+      ),
+    );
   }
 }
