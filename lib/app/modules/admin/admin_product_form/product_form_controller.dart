@@ -124,17 +124,24 @@ class AdminProductFormController extends GetxController {
       if (productToEdit == null) {
         // --- CREATE (INSERT) ---
         await _supabase.client.from('products').insert(productData);
-        Get.snackbar(
-          'Berhasil Ditambahkan!',
-          'Produk "${titleC.text}" telah berhasil ditambahkan ke toko.',
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          icon: const Icon(Icons.check_circle, color: Colors.white),
-          duration: const Duration(seconds: 3),
-          margin: const EdgeInsets.all(16),
-          borderRadius: 12,
-        );
+        
+        // Kembali ke list dulu
+        Get.back(result: true);
+        
+        // Tampilkan notifikasi setelah kembali
+        Future.delayed(const Duration(milliseconds: 300), () {
+          Get.snackbar(
+            'Berhasil Ditambahkan!',
+            'Produk "${titleC.text}" telah berhasil ditambahkan ke toko.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            icon: const Icon(Icons.check_circle, color: Colors.white),
+            duration: const Duration(seconds: 4),
+            margin: const EdgeInsets.all(16),
+            borderRadius: 12,
+          );
+        });
       } else {
         // --- UPDATE ---
         if (selectedCategoryId.value == null) {
@@ -146,21 +153,24 @@ class AdminProductFormController extends GetxController {
             .update(productData)
             .eq('id', productToEdit!.id);
 
-        Get.snackbar(
-          'Berhasil Diperbarui!',
-          'Produk "${titleC.text}" telah berhasil diperbarui.',
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Colors.blue,
-          colorText: Colors.white,
-          icon: const Icon(Icons.edit, color: Colors.white),
-          duration: const Duration(seconds: 3),
-          margin: const EdgeInsets.all(16),
-          borderRadius: 12,
-        );
+        // Kembali ke list dulu
+        Get.back(result: true);
+        
+        // Tampilkan notifikasi setelah kembali
+        Future.delayed(const Duration(milliseconds: 300), () {
+          Get.snackbar(
+            'Berhasil Diperbarui!',
+            'Produk "${titleC.text}" telah berhasil diperbarui.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.blue,
+            colorText: Colors.white,
+            icon: const Icon(Icons.edit, color: Colors.white),
+            duration: const Duration(seconds: 4),
+            margin: const EdgeInsets.all(16),
+            borderRadius: 12,
+          );
+        });
       }
-
-      // Kembali ke list
-      Get.back(result: true);
     } catch (e) {
       Get.snackbar(
         'Gagal Menyimpan',

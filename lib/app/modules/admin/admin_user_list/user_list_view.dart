@@ -140,6 +140,8 @@ class AdminUserListView extends GetView<AdminUserListController> {
     final colors = [Colors.blue, Colors.green, Colors.purple, Colors.orange, Colors.teal, Colors.pink];
     final avatarColor = colors[index % colors.length];
     final hasAvatar = user['avatar_url'] != null && user['avatar_url'].toString().isNotEmpty;
+    final totalOrders = user['total_orders'] ?? 0;
+    final totalItems = user['total_items'] ?? 0;
 
     return GestureDetector(
       onTap: () => controller.showUserDetail(user),
@@ -200,8 +202,47 @@ class AdminUserListView extends GetView<AdminUserListController> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 4),
+                  // Statistik Order Badge
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: totalOrders > 0 
+                              ? (isDark ? Colors.green.withValues(alpha: 0.2) : Colors.green.withValues(alpha: 0.1))
+                              : (isDark ? Colors.grey.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.1)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.shopping_bag, size: 10, color: totalOrders > 0 ? Colors.green : Colors.grey),
+                            const SizedBox(width: 4),
+                            Text('$totalOrders order', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w500, color: totalOrders > 0 ? Colors.green : Colors.grey)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppTheme.accentMustard.withValues(alpha: 0.2) : AppTheme.lightPrimary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.inventory_2, size: 10, color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary),
+                            const SizedBox(width: 4),
+                            Text('$totalItems barang', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w500, color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                   if (user['phone'] != null && user['phone'].toString().isNotEmpty) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     Row(
                       children: [
                         Icon(Icons.phone, size: 12, color: isDark ? Colors.white38 : Colors.grey),
