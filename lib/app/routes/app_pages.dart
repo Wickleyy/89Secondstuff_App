@@ -22,6 +22,7 @@ import '../modules/auth/auth_binding.dart';
 import '../modules/auth/login_view.dart';
 import '../modules/auth/signup_view.dart';
 import '../modules/categories/categories_binding.dart';
+import '../modules/categories/categories_view.dart';
 import '../modules/home/home_binding.dart';
 import '../modules/main_navigation/main_navigation_binding.dart';
 import '../modules/main_navigation/main_navigation_view.dart';
@@ -42,6 +43,8 @@ import '../modules/admin/admin_product_list/product_list_binding.dart';
 import '../modules/admin/admin_product_list/product_list_view.dart';
 import '../modules/admin/admin_product_form/product_form_binding.dart';
 import '../modules/admin/admin_product_form/product_form_view.dart';
+import '../modules/admin/admin_user_list/user_list_binding.dart';
+import '../modules/admin/admin_user_list/user_list_view.dart';
 import '../modules/account/shipping_address/map_picker/map_picker_view.dart';
 import '../modules/account/shipping_address/map_picker/map_picker_binding.dart';
 import '../modules/checkout/checkout_view.dart';
@@ -60,7 +63,6 @@ class AppPages {
   static const INITIAL = AppRoutes.LOGIN;
 
   static final routes = [
-    
     GetPage(
       name: _Paths.LOGIN,
       page: () => LoginView(),
@@ -82,6 +84,11 @@ class AppPages {
         ChatBinding(),
         AccountBinding(),
       ],
+    ),
+    GetPage(
+      name: _Paths.CATEGORIES,
+      page: () => const CategoriesView(),
+      binding: CategoriesBinding(),
     ),
     GetPage(
       name: _Paths.CATEGORY_PRODUCTS,
@@ -197,6 +204,10 @@ class AppPages {
     GetPage(
         name: _Paths.ADMIN_PRODUCT_FORM,
         page: () => AdminProductFormView(),
-        binding: AdminProductFormBinding())
+        binding: AdminProductFormBinding()),
+    GetPage(
+        name: _Paths.ADMIN_USER_LIST,
+        page: () => const AdminUserListView(),
+        binding: AdminUserListBinding()),
   ];
 }

@@ -18,7 +18,7 @@ class AdminProductListView extends GetView<AdminProductListController> {
         decoration: BoxDecoration(
           gradient: isDark
               ? const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppTheme.deepPurpleDark, Color(0xFF251742), AppTheme.deepPurpleDark])
-              : const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFFFFF6E5), Color(0xFFFFF9F0)]),
+              : const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFFF8F5FF), Color(0xFFFFF9F0)]),
         ),
         child: SafeArea(
           child: Column(
@@ -27,7 +27,7 @@ class AdminProductListView extends GetView<AdminProductListController> {
               Expanded(
                 child: Obx(() {
                   if (controller.isLoading.value) {
-                    return Center(child: CircularProgressIndicator(color: isDark ? AppTheme.accentMustard : const Color(0xFFD87C34)));
+                    return Center(child: CircularProgressIndicator(color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary));
                   }
                   if (controller.productList.isEmpty) {
                     return _buildEmptyState(isDark);
@@ -46,10 +46,10 @@ class AdminProductListView extends GetView<AdminProductListController> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: controller.goToAddProduct,
-        backgroundColor: isDark ? AppTheme.accentMustard : const Color(0xFFD87C34),
+        backgroundColor: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: isDark ? 8 : 4,
-        child: Icon(Icons.add, color: isDark ? AppTheme.deepPurpleDark : Colors.white, size: 28),
+        child: Icon(Icons.add, color: Colors.white, size: 28),
       ),
     );
   }
@@ -66,10 +66,10 @@ class AdminProductListView extends GetView<AdminProductListController> {
               borderRadius: BorderRadius.circular(14),
               boxShadow: isDark ? null : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)],
             ),
-            child: IconButton(icon: Icon(Icons.arrow_back_rounded, color: isDark ? AppTheme.accentMustard : const Color(0xFF4E342E)), onPressed: () => Get.back()),
+            child: IconButton(icon: Icon(Icons.arrow_back_rounded, color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary), onPressed: () => Get.back()),
           ),
           const SizedBox(width: 16),
-          Text('Kelola Produk', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF4E342E))),
+          Text('Kelola Produk', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppTheme.lightOnText)),
           const Spacer(),
           Obx(() => Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -79,7 +79,7 @@ class AdminProductListView extends GetView<AdminProductListController> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: isDark ? null : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6)],
                 ),
-                child: Text('${controller.productList.length} produk', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? AppTheme.accentMustard : const Color(0xFFD87C34))),
+                child: Text('${controller.productList.length} produk', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary)),
               )),
         ],
       ),
@@ -94,7 +94,7 @@ class AdminProductListView extends GetView<AdminProductListController> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(gradient: isDark ? LinearGradient(colors: [AppTheme.glowPurple.withValues(alpha: 0.2), AppTheme.deepPurpleLight.withValues(alpha: 0.1)]) : LinearGradient(colors: [Colors.orange.withValues(alpha: 0.1), Colors.orange.withValues(alpha: 0.05)]), shape: BoxShape.circle),
-            child: Icon(Icons.inventory_2_outlined, size: 56, color: isDark ? AppTheme.accentMustard.withValues(alpha: 0.5) : Colors.orange.withValues(alpha: 0.5)),
+            child: Icon(Icons.inventory_2_outlined, size: 56, color: isDark ? AppTheme.accentMustard.withValues(alpha: 0.5) : AppTheme.lightPrimary.withValues(alpha: 0.5)),
           ),
           const SizedBox(height: 20),
           Text('Belum ada produk', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white70 : Colors.grey[600])),
@@ -122,27 +122,27 @@ class AdminProductListView extends GetView<AdminProductListController> {
         leading: Container(
           width: 65,
           height: 65,
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), color: isDark ? AppTheme.deepPurpleLight : Colors.grey[100], boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 6)]),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), color: isDark ? AppTheme.deepPurpleLight : AppTheme.lightBackground, boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 6)]),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(14),
             child: Image.network(
               product.image,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => Icon(Icons.broken_image_rounded, color: isDark ? Colors.white38 : Colors.grey[400]),
-              loadingBuilder: (_, child, loadingProgress) => loadingProgress == null ? child : Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: isDark ? AppTheme.accentMustard.withValues(alpha: 0.5) : const Color(0xFFD87C34).withValues(alpha: 0.5)))),
+              loadingBuilder: (_, child, loadingProgress) => loadingProgress == null ? child : Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: isDark ? AppTheme.accentMustard.withValues(alpha: 0.5) : AppTheme.lightPrimary.withValues(alpha: 0.5)))),
             ),
           ),
         ),
-        title: Text(product.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15, color: isDark ? Colors.white : const Color(0xFF4E342E))),
+        title: Text(product.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15, color: isDark ? Colors.white : AppTheme.lightOnText)),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 6),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              gradient: isDark ? LinearGradient(colors: [AppTheme.accentMustard.withValues(alpha: 0.2), AppTheme.accentRed.withValues(alpha: 0.1)]) : LinearGradient(colors: [Colors.orange.withValues(alpha: 0.1), Colors.orange.withValues(alpha: 0.05)]),
+              gradient: isDark ? LinearGradient(colors: [AppTheme.accentMustard.withValues(alpha: 0.2), AppTheme.accentRed.withValues(alpha: 0.1)]) : LinearGradient(colors: [AppTheme.lightPrimary.withValues(alpha: 0.1), AppTheme.lightPrimary.withValues(alpha: 0.05)]),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(currencyFormat.format(product.price), style: GoogleFonts.poppins(color: isDark ? AppTheme.accentMustard : const Color(0xFFD87C34), fontWeight: FontWeight.w600, fontSize: 13)),
+            child: Text(currencyFormat.format(product.price), style: GoogleFonts.poppins(color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
           ),
         ),
         trailing: Row(

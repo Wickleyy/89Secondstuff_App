@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:_89_secondstufff/app/data/services/location_service.dart';
+
+enum LocationMethod { gps, network }
 
 class MapPickerController extends GetxController {
   final LocationService _locationService = Get.find<LocationService>();
@@ -17,6 +20,11 @@ class MapPickerController extends GetxController {
   final RxBool isFetchingAddress = false.obs;
   final RxString errorMessage = ''.obs;
   final RxList<Map<String, dynamic>> searchResults = <Map<String, dynamic>>[].obs;
+  
+  // Location method toggle (GPS vs Network)
+  final Rx<LocationMethod> locationMethod = LocationMethod.gps.obs;
+  final RxDouble currentAccuracy = 0.0.obs;
+  final RxDouble lastResponseTime = 0.0.obs;
   
   final TextEditingController searchController = TextEditingController();
   Timer? _debounce;
@@ -57,19 +65,51 @@ class MapPickerController extends GetxController {
       isLoading.value = true;
       errorMessage.value = '';
 
-      final position = await _locationService.getCurrentPosition();
+      final stopwatch = Stopwatch()..start();
       
-      if (position != null) {
-        selectedLocation.value = LatLng(position.latitude, position.longitude);
-        mapController.move(selectedLocation.value, 17.0);
+      Position? position;
+      
+      if (locationMethod.value == LocationMethod.gps) {
+        // GPS - High Accuracy
+        position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.best,
+            timeLimit: Duration(seconds: 30),
+          ),
+        );
       } else {
-        errorMessage.value = _locationService.errorMessage.value;
+        // Network - Low Accuracy (faster)
+        position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.lowest,
+            timeLimit: Duration(seconds: 15),
+          ),
+        );
       }
+      
+      stopwatch.stop();
+      lastResponseTime.value = stopwatch.elapsedMilliseconds / 1000;
+      currentAccuracy.value = position.accuracy;
+      
+      selectedLocation.value = LatLng(position.latitude, position.longitude);
+      mapController.move(selectedLocation.value, 17.0);
+      
+      debugPrint('[MapPicker] Location method: ${locationMethod.value.name}');
+      debugPrint('[MapPicker] Accuracy: ${position.accuracy}m, Time: ${lastResponseTime.value}s');
     } catch (e) {
       errorMessage.value = 'Gagal mendapatkan lokasi: $e';
     } finally {
       isLoading.value = false;
     }
+  }
+
+  void setLocationMethod(LocationMethod method) {
+    locationMethod.value = method;
+    // Reset accuracy info when switching
+    currentAccuracy.value = 0.0;
+    lastResponseTime.value = 0.0;
+    // Auto fetch location when switching method
+    getCurrentLocation();
   }
 
   void onMapTap(TapPosition tapPosition, LatLng point) {

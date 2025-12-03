@@ -96,14 +96,19 @@ class AdminHomeView extends GetView<AdminHomeController> {
                   shape: BoxShape.circle,
                   gradient: LinearGradient(colors: [AppTheme.accentMustard, AppTheme.accentRed]),
                 ),
-                child: CircleAvatar(
+                child: Obx(() => CircleAvatar(
                   radius: 24,
                   backgroundColor: isDark ? AppTheme.deepPurpleDark : AppTheme.lightPrimary,
-                  child: Obx(() => Text(
-                    controller.adminName.value.isNotEmpty ? controller.adminName.value[0].toUpperCase() : 'A',
-                    style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.accentMustard),
-                  )),
-                ),
+                  backgroundImage: controller.adminAvatarUrl.value.isNotEmpty 
+                      ? NetworkImage(controller.adminAvatarUrl.value) 
+                      : null,
+                  child: controller.adminAvatarUrl.value.isEmpty
+                      ? Text(
+                          controller.adminName.value.isNotEmpty ? controller.adminName.value[0].toUpperCase() : 'A',
+                          style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.accentMustard),
+                        )
+                      : null,
+                )),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -179,17 +184,17 @@ class AdminHomeView extends GetView<AdminHomeController> {
         children: [
           Row(
             children: [
-              _buildStatCard('Produk', controller.totalProducts.value.toString(), Icons.inventory_2_rounded, isDark ? AppTheme.accentMustard : Colors.orange, isDark),
+              _buildStatCard('Produk', controller.totalProducts.value.toString(), Icons.inventory_2_rounded, isDark ? AppTheme.accentMustard : Colors.orange, isDark, onTap: controller.showProductsDialog),
               const SizedBox(width: 12),
-              _buildStatCard('Pesanan', controller.totalOrders.value.toString(), Icons.shopping_bag_rounded, Colors.blue, isDark),
+              _buildStatCard('Pesanan', controller.totalOrders.value.toString(), Icons.shopping_bag_rounded, Colors.blue, isDark, onTap: controller.showOrdersDialog),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              _buildStatCard('Chat', controller.activeChats.value.toString(), Icons.chat_bubble_rounded, Colors.green, isDark),
+              _buildStatCard('Chat', controller.activeChats.value.toString(), Icons.chat_bubble_rounded, Colors.green, isDark, onTap: controller.goToChats),
               const SizedBox(width: 12),
-              _buildStatCard('User', controller.totalUsers.value.toString(), Icons.people_rounded, Colors.purple, isDark),
+              _buildStatCard('User', controller.totalUsers.value.toString(), Icons.people_rounded, Colors.purple, isDark, onTap: controller.goToUsers),
             ],
           ),
           const SizedBox(height: 12),
@@ -232,33 +237,39 @@ class AdminHomeView extends GetView<AdminHomeController> {
     });
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color, bool isDark) {
+  Widget _buildStatCard(String label, String value, IconData icon, Color color, bool isDark, {VoidCallback? onTap}) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: isDark ? LinearGradient(colors: [AppTheme.deepPurpleLight.withValues(alpha: 0.4), AppTheme.deepPurpleDark.withValues(alpha: 0.6)]) : null,
-          color: isDark ? null : Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: isDark ? AppTheme.glowPurple.withValues(alpha: 0.2) : Colors.transparent),
-          boxShadow: isDark ? [BoxShadow(color: AppTheme.glowPurple.withValues(alpha: 0.15), blurRadius: 10)] : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(gradient: LinearGradient(colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.1)]), borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(value, style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
-                Text(label, style: GoogleFonts.poppins(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey[600])),
-              ],
-            ),
-          ],
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: isDark ? LinearGradient(colors: [AppTheme.deepPurpleLight.withValues(alpha: 0.4), AppTheme.deepPurpleDark.withValues(alpha: 0.6)]) : null,
+            color: isDark ? null : Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: isDark ? AppTheme.glowPurple.withValues(alpha: 0.2) : Colors.transparent),
+            boxShadow: isDark ? [BoxShadow(color: AppTheme.glowPurple.withValues(alpha: 0.15), blurRadius: 10)] : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(gradient: LinearGradient(colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.1)]), borderRadius: BorderRadius.circular(12)),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(value, style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
+                    Text(label, style: GoogleFonts.poppins(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey[600])),
+                  ],
+                ),
+              ),
+              if (onTap != null) Icon(Icons.arrow_forward_ios, size: 14, color: isDark ? Colors.white38 : Colors.grey),
+            ],
+          ),
         ),
       ),
     );
@@ -274,9 +285,11 @@ class AdminHomeView extends GetView<AdminHomeController> {
       childAspectRatio: 1.15,
       children: [
         _buildMenuCard('Kelola Produk', 'Edit/Hapus Barang', Icons.inventory_2_rounded, isDark ? AppTheme.accentMustard : Colors.orange, controller.goToProducts, isDark),
+        _buildMenuCard('Pesanan', 'Lihat Semua Order', Icons.shopping_bag_rounded, Colors.blue, controller.showOrdersDialog, isDark),
         _buildMenuCard('Chat Pelanggan', 'Balas Pesan', Icons.chat_bubble_rounded, Colors.green, controller.goToChats, isDark),
-        _buildMenuCard('Laporan', 'Statistik Penjualan', Icons.bar_chart_rounded, Colors.blue, () => _showReportDialog(isDark), isDark),
-        _buildMenuCard('Pengaturan', 'Akun & Preferensi', Icons.settings_rounded, Colors.purple, () => _showSettingsDialog(isDark), isDark),
+        _buildMenuCard('Kelola User', 'Lihat/Hapus Akun', Icons.people_rounded, Colors.purple, controller.goToUsers, isDark),
+        _buildMenuCard('Laporan', 'Statistik Penjualan', Icons.bar_chart_rounded, Colors.teal, () => _showReportDialog(isDark), isDark),
+        _buildMenuCard('Pengaturan', 'Akun & Preferensi', Icons.settings_rounded, Colors.grey, () => _showSettingsDialog(isDark), isDark),
       ],
     );
   }

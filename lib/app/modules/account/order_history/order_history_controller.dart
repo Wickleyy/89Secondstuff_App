@@ -8,7 +8,9 @@ class OrderHistoryController extends GetxController {
   
   var orders = <Order>[].obs;
   var isLoading = false.obs;
+  var isSyncing = false.obs; // For background sync indicator
   var selectedFilter = 'all'.obs;
+  var dataSource = ''.obs; // 'cache' or 'server'
 
   final List<Map<String, String>> filterOptions = [
     {'value': 'all', 'label': 'Semua'},
@@ -28,10 +30,26 @@ class OrderHistoryController extends GetxController {
 
   Future<void> loadOrders() async {
     isLoading.value = true;
+    
     try {
-      final result = await _orderService.getUserOrders();
-      orders.assignAll(result);
+      // 1. Load dari Hive cache dulu (instant, offline)
+      final cachedOrders = _orderService.getCachedOrders();
+      if (cachedOrders.isNotEmpty) {
+        orders.assignAll(cachedOrders);
+        dataSource.value = 'cache';
+        isLoading.value = false;
+        debugPrint('[OrderHistory] Loaded ${cachedOrders.length} orders from Hive cache');
+        
+        // 2. Background sync dari Supabase
+        _syncFromServer();
+      } else {
+        // Tidak ada cache, langsung fetch dari server
+        debugPrint('[OrderHistory] No cache, fetching from server...');
+        await _fetchFromServer();
+      }
     } catch (e) {
+      debugPrint('[OrderHistory] Error loading orders: $e');
+      isLoading.value = false;
       Get.snackbar(
         'Error', 
         'Gagal memuat riwayat pesanan',
@@ -39,8 +57,38 @@ class OrderHistoryController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+    }
+  }
+
+  Future<void> _fetchFromServer() async {
+    try {
+      final result = await _orderService.getUserOrders();
+      orders.assignAll(result);
+      dataSource.value = 'server';
+      debugPrint('[OrderHistory] Loaded ${result.length} orders from Supabase');
+    } catch (e) {
+      debugPrint('[OrderHistory] Error fetching from server: $e');
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> _syncFromServer() async {
+    isSyncing.value = true;
+    try {
+      final result = await _orderService.getUserOrders();
+      
+      // Check if data changed
+      if (result.length != orders.length) {
+        orders.assignAll(result);
+        dataSource.value = 'server';
+        debugPrint('[OrderHistory] Synced ${result.length} orders from Supabase');
+      }
+    } catch (e) {
+      debugPrint('[OrderHistory] Background sync failed: $e');
+      // Silent fail - we already have cache data
+    } finally {
+      isSyncing.value = false;
     }
   }
 
@@ -56,7 +104,7 @@ class OrderHistoryController extends GetxController {
   }
 
   Color getStatusColor(String status) {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'pending':
         return Colors.orange;
       case 'paid':
@@ -75,7 +123,7 @@ class OrderHistoryController extends GetxController {
   }
 
   String getStatusText(String status) {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'pending':
         return 'Menunggu Pembayaran';
       case 'paid':
@@ -94,7 +142,7 @@ class OrderHistoryController extends GetxController {
   }
 
   IconData getStatusIcon(String status) {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'pending':
         return Icons.access_time;
       case 'paid':
@@ -113,6 +161,8 @@ class OrderHistoryController extends GetxController {
   }
 
   Future<void> refreshOrders() async {
-    await loadOrders();
+    // Force fetch from server on pull-to-refresh
+    isLoading.value = true;
+    await _fetchFromServer();
   }
 }

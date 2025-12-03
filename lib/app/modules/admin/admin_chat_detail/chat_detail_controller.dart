@@ -11,7 +11,8 @@ class AdminChatDetailController extends GetxController {
   final SupabaseService _supabase = Get.find<SupabaseService>();
 
   late final String _adminId;
-  late final Profile targetUser; // User yang sedang diajak chat
+  late final Profile targetUser;
+  var isUserOnline = false.obs;
 
   var messages = <Message>[].obs;
   var isLoading = true.obs;
@@ -31,7 +32,14 @@ class AdminChatDetailController extends GetxController {
     }
 
     _adminId = _supabase.currentUser!.id;
+    _supabase.joinPresenceChannel();
     _initializeChat();
+    
+    // Listen to online users changes
+    ever(_supabase.onlineUsers, (_) {
+      isUserOnline.value = _supabase.isUserOnline(targetUser.id);
+    });
+    isUserOnline.value = _supabase.isUserOnline(targetUser.id);
   }
 
   Future<void> _initializeChat() async {

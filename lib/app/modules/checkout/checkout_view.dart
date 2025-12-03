@@ -4,8 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:_89_secondstufff/app/routes/app_pages.dart';
 import 'package:_89_secondstufff/app/themes/app_theme.dart';
+import 'package:_89_secondstufff/app/modules/account/shipping_address/models/shipping_address_model.dart';
 import 'checkout_controller.dart';
 
 class CheckoutView extends GetView<CheckoutController> {
@@ -138,7 +138,7 @@ class CheckoutView extends GetView<CheckoutController> {
         final address = controller.selectedAddress;
         if (address == null) {
           return InkWell(
-            onTap: () => Get.toNamed(AppRoutes.SHIPPING_ADDRESS),
+            onTap: controller.showAddressSelector,
             borderRadius: BorderRadius.circular(12),
             child: Container(
               width: double.infinity,
@@ -160,7 +160,7 @@ class CheckoutView extends GetView<CheckoutController> {
           );
         }
         return InkWell(
-          onTap: () => Get.toNamed(AppRoutes.SHIPPING_ADDRESS),
+          onTap: controller.showAddressSelector,
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.all(12),
@@ -194,7 +194,12 @@ class CheckoutView extends GetView<CheckoutController> {
                     ],
                   ),
                 ),
-                Icon(Icons.edit_outlined, color: isDark ? AppTheme.accentMustard : colorScheme.primary, size: 20),
+                Column(
+                  children: [
+                    Icon(Icons.swap_vert_rounded, color: isDark ? AppTheme.accentMustard : colorScheme.primary, size: 22),
+                    Text('Ganti', style: GoogleFonts.poppins(fontSize: 10, color: isDark ? AppTheme.accentMustard : colorScheme.primary)),
+                  ],
+                ),
               ],
             ),
           ),
@@ -365,6 +370,159 @@ class CheckoutView extends GetView<CheckoutController> {
                 )),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class AddressSelectorSheet extends StatelessWidget {
+  final List<ShippingAddress> addresses;
+  final ShippingAddress? selectedAddress;
+  final Function(ShippingAddress) onSelect;
+  final VoidCallback onAddNew;
+
+  const AddressSelectorSheet({
+    super.key,
+    required this.addresses,
+    required this.selectedAddress,
+    required this.onSelect,
+    required this.onAddNew,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
+      decoration: BoxDecoration(
+        gradient: isDark ? const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppTheme.deepPurpleLight, AppTheme.deepPurpleDark]) : null,
+        color: isDark ? null : colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle bar
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(color: isDark ? Colors.white24 : Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+          ),
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: isDark ? [AppTheme.accentMustard.withValues(alpha: 0.2), AppTheme.accentRed.withValues(alpha: 0.1)] : [colorScheme.primary.withValues(alpha: 0.15), colorScheme.primary.withValues(alpha: 0.05)]),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.location_on, color: isDark ? AppTheme.accentMustard : colorScheme.primary, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Text('Pilih Alamat Pengiriman', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : colorScheme.onSurface)),
+              ],
+            ),
+          ),
+          Divider(color: isDark ? Colors.white12 : colorScheme.outline.withValues(alpha: 0.1), height: 1),
+          // Address list
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              itemCount: addresses.length,
+              itemBuilder: (context, index) {
+                final address = addresses[index];
+                final isSelected = selectedAddress?.id == address.id;
+                return _buildAddressItem(address, isSelected, isDark, colorScheme);
+              },
+            ),
+          ),
+          // Add new address button
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: OutlinedButton.icon(
+              onPressed: onAddNew,
+              icon: Icon(Icons.add_location_alt, color: isDark ? AppTheme.accentMustard : colorScheme.primary),
+              label: Text('Tambah Alamat Baru', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: isDark ? AppTheme.accentMustard : colorScheme.primary)),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: isDark ? AppTheme.accentMustard : colorScheme.primary, width: 1.5),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                minimumSize: const Size(double.infinity, 50),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddressItem(ShippingAddress address, bool isSelected, bool isDark, ColorScheme colorScheme) {
+    return GestureDetector(
+      onTap: () => onSelect(address),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? LinearGradient(colors: isDark ? [AppTheme.accentMustard.withValues(alpha: 0.2), AppTheme.accentRed.withValues(alpha: 0.1)] : [colorScheme.primary.withValues(alpha: 0.15), colorScheme.primary.withValues(alpha: 0.05)])
+              : (isDark ? LinearGradient(colors: [AppTheme.deepPurpleLight.withValues(alpha: 0.3), AppTheme.deepPurpleDark.withValues(alpha: 0.5)]) : null),
+          color: isSelected ? null : (isDark ? null : colorScheme.surface),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? (isDark ? AppTheme.accentMustard : colorScheme.primary) : (isDark ? AppTheme.glowPurple.withValues(alpha: 0.2) : colorScheme.outline.withValues(alpha: 0.15)),
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected ? [BoxShadow(color: (isDark ? AppTheme.accentMustard : colorScheme.primary).withValues(alpha: 0.2), blurRadius: 8)] : null,
+        ),
+        child: Row(
+          children: [
+            // Radio indicator
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: isSelected ? (isDark ? AppTheme.accentMustard : colorScheme.primary) : (isDark ? Colors.white38 : Colors.grey), width: 2),
+                color: isSelected ? (isDark ? AppTheme.accentMustard : colorScheme.primary) : Colors.transparent,
+              ),
+              child: isSelected ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
+            ),
+            const SizedBox(width: 14),
+            // Address info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(address.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14, color: isDark ? Colors.white : colorScheme.onSurface)),
+                      ),
+                      if (address.isDefault)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(gradient: const LinearGradient(colors: [Colors.green, Colors.teal]), borderRadius: BorderRadius.circular(6)),
+                          child: Text('Utama', style: GoogleFonts.poppins(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600)),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(address.phone, style: GoogleFonts.poppins(fontSize: 12, color: isDark ? Colors.white60 : colorScheme.onSurface.withValues(alpha: 0.6))),
+                  const SizedBox(height: 2),
+                  Text(address.fullAddress, style: GoogleFonts.poppins(fontSize: 11, color: isDark ? Colors.white54 : colorScheme.onSurface.withValues(alpha: 0.5)), maxLines: 2, overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

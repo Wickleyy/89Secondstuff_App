@@ -17,7 +17,7 @@ class AdminChatListView extends GetView<AdminChatListController> {
         decoration: BoxDecoration(
           gradient: isDark
               ? const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppTheme.deepPurpleDark, Color(0xFF251742), AppTheme.deepPurpleDark])
-              : const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFFFFF6E5), Color(0xFFFFF9F0)]),
+              : const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFFF8F5FF), Color(0xFFFFF9F0)]),
         ),
         child: SafeArea(
           child: Column(
@@ -26,7 +26,7 @@ class AdminChatListView extends GetView<AdminChatListController> {
               Expanded(
                 child: Obx(() {
                   if (controller.isLoading.value) {
-                    return Center(child: CircularProgressIndicator(color: isDark ? AppTheme.accentMustard : const Color(0xFFD87C34)));
+                    return Center(child: CircularProgressIndicator(color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary));
                   }
                   if (controller.chatList.isEmpty) {
                     return _buildEmptyState(isDark);
@@ -57,26 +57,32 @@ class AdminChatListView extends GetView<AdminChatListController> {
               borderRadius: BorderRadius.circular(14),
               boxShadow: isDark ? null : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)],
             ),
-            child: IconButton(icon: Icon(Icons.arrow_back_rounded, color: isDark ? AppTheme.accentMustard : const Color(0xFF4E342E)), onPressed: () => Get.back()),
+            child: IconButton(icon: Icon(Icons.arrow_back_rounded, color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary), onPressed: () => Get.back()),
           ),
           const SizedBox(width: 16),
-          Text('Chat Pelanggan', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF4E342E))),
+          Text('Chat Pelanggan', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppTheme.lightOnText)),
           const Spacer(),
-          Obx(() => Container(
+          Obx(() {
+            final online = controller.onlineCount.value;
+            final total = controller.chatList.length;
+            return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [Colors.green.withValues(alpha: 0.2), Colors.green.withValues(alpha: 0.1)]),
+                  gradient: LinearGradient(colors: online > 0 
+                      ? [Colors.green.withValues(alpha: 0.2), Colors.green.withValues(alpha: 0.1)]
+                      : [Colors.grey.withValues(alpha: 0.2), Colors.grey.withValues(alpha: 0.1)]),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
+                    Container(width: 8, height: 8, decoration: BoxDecoration(color: online > 0 ? Colors.green : Colors.grey, shape: BoxShape.circle)),
                     const SizedBox(width: 6),
-                    Text('${controller.chatList.length} aktif', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.green)),
+                    Text('$online/$total online', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: online > 0 ? Colors.green : Colors.grey)),
                   ],
                 ),
-              )),
+              );
+          }),
         ],
       ),
     );
@@ -90,7 +96,7 @@ class AdminChatListView extends GetView<AdminChatListController> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(gradient: isDark ? LinearGradient(colors: [AppTheme.glowPurple.withValues(alpha: 0.2), AppTheme.deepPurpleLight.withValues(alpha: 0.1)]) : LinearGradient(colors: [Colors.green.withValues(alpha: 0.1), Colors.green.withValues(alpha: 0.05)]), shape: BoxShape.circle),
-            child: Icon(Icons.chat_bubble_outline, size: 56, color: isDark ? AppTheme.accentMustard.withValues(alpha: 0.5) : Colors.green.withValues(alpha: 0.5)),
+            child: Icon(Icons.chat_bubble_outline, size: 56, color: isDark ? AppTheme.accentMustard.withValues(alpha: 0.5) : AppTheme.lightPrimary.withValues(alpha: 0.5)),
           ),
           const SizedBox(height: 20),
           Text('Belum ada chat', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white70 : Colors.grey[600])),
@@ -130,27 +136,30 @@ class AdminChatListView extends GetView<AdminChatListController> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(profile.email ?? 'User', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF4E342E)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(profile.email ?? 'User', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: isDark ? Colors.white : AppTheme.lightOnText), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
-                      const SizedBox(width: 6),
-                      Text('Online', style: GoogleFonts.poppins(fontSize: 12, color: Colors.green)),
-                      const SizedBox(width: 12),
-                      Expanded(child: Text('Klik untuk melihat chat...', style: GoogleFonts.poppins(fontSize: 12, color: isDark ? Colors.white38 : Colors.grey[500]), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                    ],
-                  ),
+                  Obx(() {
+                    final isOnline = controller.isUserOnline(profile.id);
+                    return Row(
+                      children: [
+                        Container(width: 6, height: 6, decoration: BoxDecoration(color: isOnline ? Colors.green : Colors.grey, shape: BoxShape.circle)),
+                        const SizedBox(width: 6),
+                        Text(isOnline ? 'Online' : 'Offline', style: GoogleFonts.poppins(fontSize: 12, color: isOnline ? Colors.green : Colors.grey)),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text('Klik untuk melihat chat...', style: GoogleFonts.poppins(fontSize: 12, color: isDark ? Colors.white38 : Colors.grey[500]), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      ],
+                    );
+                  }),
                 ],
               ),
             ),
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: isDark ? LinearGradient(colors: [AppTheme.accentMustard.withValues(alpha: 0.2), AppTheme.accentRed.withValues(alpha: 0.1)]) : LinearGradient(colors: [const Color(0xFFD87C34).withValues(alpha: 0.12), const Color(0xFFD87C34).withValues(alpha: 0.05)]),
+                gradient: isDark ? LinearGradient(colors: [AppTheme.accentMustard.withValues(alpha: 0.2), AppTheme.accentRed.withValues(alpha: 0.1)]) : LinearGradient(colors: [AppTheme.lightPrimary.withValues(alpha: 0.12), AppTheme.lightPrimary.withValues(alpha: 0.05)]),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.arrow_forward_ios, size: 16, color: isDark ? AppTheme.accentMustard : const Color(0xFFD87C34)),
+              child: Icon(Icons.arrow_forward_ios, size: 16, color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary),
             ),
           ],
         ),

@@ -10,7 +10,8 @@ class ChatController extends GetxController {
 
   final SupabaseService _supabase = Get.find<SupabaseService>();
   late final String currentUserId;
-  var adminId = ''.obs; // ID admin yang akan kita cari
+  var adminId = ''.obs;
+  var isAdminOnline = false.obs;
 
   var messages = <Message>[].obs;
   var isLoading = true.obs;
@@ -21,7 +22,23 @@ class ChatController extends GetxController {
   void onInit() {
     super.onInit();
     currentUserId = _supabase.currentUser!.id;
+    _supabase.joinPresenceChannel();
     _initializeChat();
+    
+    // Listen to online users changes
+    ever(_supabase.onlineUsers, (_) {
+      if (adminId.value.isNotEmpty) {
+        isAdminOnline.value = _supabase.isUserOnline(adminId.value);
+      }
+    });
+  }
+
+  @override
+  void onClose() {
+    textController.dispose();
+    scrollController.dispose();
+    _messageSubscription?.cancel();
+    super.onClose();
   }
 
   Future<void> _initializeChat() async {
@@ -49,8 +66,9 @@ class ChatController extends GetxController {
           .from('profiles')
           .select('id')
           .eq('role', 'admin')
-          .single(); // Ambil 1 admin
+          .single();
       adminId.value = response['id'];
+      isAdminOnline.value = _supabase.isUserOnline(adminId.value);
     } catch (e) {
       print("Error fetching admin ID: $e");
     }
@@ -139,13 +157,5 @@ class ChatController extends GetxController {
         );
       }
     });
-  }
-
-  @override
-  void onClose() {
-    textController.dispose();
-    scrollController.dispose();
-    _messageSubscription?.cancel();
-    super.onClose();
   }
 }

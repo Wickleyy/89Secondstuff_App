@@ -8,6 +8,7 @@ import 'package:_89_secondstufff/app/widgets/product_card.dart';
 import 'package:_89_secondstufff/app/modules/main_navigation/main_navigation_controller.dart';
 import 'package:_89_secondstufff/app/widgets/app_drawer.dart';
 import 'package:_89_secondstufff/app/themes/app_theme.dart';
+import 'package:_89_secondstufff/app/routes/app_pages.dart';
 import 'home_controller.dart';
 
 class HomeView extends GetView<HomeController> {
@@ -116,6 +117,39 @@ class HomeView extends GetView<HomeController> {
             ),
           ),
           const SizedBox(width: 8),
+          // Back to Admin button (only show if from admin)
+          Obx(() => mainNavController.isFromAdmin.value
+              ? GestureDetector(
+                  onTap: mainNavController.goBackToAdmin,
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: isDark
+                            ? [AppTheme.accentMustard, AppTheme.accentRed]
+                            : [colorScheme.primary, colorScheme.secondary],
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (isDark ? AppTheme.accentMustard : colorScheme.primary).withValues(alpha: 0.4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 16),
+                        const SizedBox(width: 4),
+                        Text('Admin', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
+                      ],
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink()),
           // Search Bar dengan glow effect
           Expanded(
             child: TweenAnimationBuilder<double>(
@@ -129,7 +163,7 @@ class HomeView extends GetView<HomeController> {
                 );
               },
               child: GestureDetector(
-                onTap: () => Get.find<MainNavigationController>().changePage(1),
+                onTap: () => Get.toNamed(AppRoutes.SEARCH),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
@@ -168,14 +202,17 @@ class HomeView extends GetView<HomeController> {
                         size: 22,
                       ),
                       const SizedBox(width: 12),
-                      Text(
-                        'Cari di 89secondStuff...',
-                        style: GoogleFonts.poppins(
-                          color: isDark 
-                            ? Colors.white.withValues(alpha: 0.5)
-                            : colorScheme.onSurface.withValues(alpha: 0.5),
-                          fontSize: 14,
-                        ),
+                      Expanded(
+                        child: Obx(() => Text(
+                          mainNavController.isFromAdmin.value ? 'Cari produk...' : 'Cari di 89secondStuff...',
+                          style: GoogleFonts.poppins(
+                            color: isDark 
+                              ? Colors.white.withValues(alpha: 0.5)
+                              : colorScheme.onSurface.withValues(alpha: 0.5),
+                            fontSize: 14,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        )),
                       ),
                     ],
                   ),

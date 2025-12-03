@@ -57,15 +57,6 @@ class CategoriesView extends GetView<CategoriesController> {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: isDark ? LinearGradient(colors: [AppTheme.glowPurple.withValues(alpha: 0.3), AppTheme.deepPurpleLight.withValues(alpha: 0.3)]) : null,
-              color: isDark ? null : colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: IconButton(icon: Icon(Icons.arrow_back_rounded, color: isDark ? AppTheme.accentMustard : colorScheme.primary), onPressed: () => Get.back()),
-          ),
-          const SizedBox(width: 16),
           Text('Kategori', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : colorScheme.onSurface)),
           const Spacer(),
           Obx(() => Container(

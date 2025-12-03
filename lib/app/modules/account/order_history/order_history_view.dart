@@ -20,8 +20,9 @@ class OrderHistoryView extends GetView<OrderHistoryController> {
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
-          gradient: isDark ? const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppTheme.deepPurpleDark, Color(0xFF251742), AppTheme.deepPurpleDark]) : null,
-          color: isDark ? null : colorScheme.surface,
+          gradient: isDark 
+              ? const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppTheme.deepPurpleDark, Color(0xFF251742), AppTheme.deepPurpleDark]) 
+              : const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFFF8F5FF), Color(0xFFFFF9F0)]),
         ),
         child: SafeArea(
           child: Column(
@@ -30,9 +31,20 @@ class OrderHistoryView extends GetView<OrderHistoryController> {
               _buildFilterChips(isDark, colorScheme),
               Expanded(
                 child: Obx(() {
-                  if (controller.isLoading.value) return Center(child: CircularProgressIndicator(color: isDark ? AppTheme.accentMustard : colorScheme.primary));
-                  final orders = controller.filteredOrders;
-                  if (orders.isEmpty) return _buildEmptyState(isDark, colorScheme);
+                  if (controller.isLoading.value) {
+                    return Center(child: CircularProgressIndicator(color: isDark ? AppTheme.accentMustard : colorScheme.primary));
+                  }
+                  
+                  final selectedFilter = controller.selectedFilter.value;
+                  final allOrders = controller.orders.toList();
+                  final orders = selectedFilter == 'all' 
+                      ? allOrders 
+                      : allOrders.where((o) => o.status.toLowerCase() == selectedFilter).toList();
+                  
+                  if (orders.isEmpty) {
+                    return _buildEmptyState(isDark, colorScheme);
+                  }
+                  
                   return RefreshIndicator(
                     onRefresh: controller.refreshOrders,
                     color: isDark ? AppTheme.accentMustard : colorScheme.primary,
@@ -65,8 +77,39 @@ class OrderHistoryView extends GetView<OrderHistoryController> {
             child: IconButton(icon: Icon(Icons.arrow_back_rounded, color: isDark ? AppTheme.accentMustard : colorScheme.primary), onPressed: () => Get.back()),
           ),
           const SizedBox(width: 16),
-          Text('Riwayat Pesanan', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : colorScheme.onSurface)),
-          const Spacer(),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Riwayat Pesanan', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : colorScheme.onSurface)),
+                Obx(() => Row(
+                  children: [
+                    Icon(
+                      controller.dataSource.value == 'cache' ? Icons.storage : Icons.cloud_done,
+                      size: 12,
+                      color: isDark ? Colors.white38 : colorScheme.onSurface.withValues(alpha: 0.4),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      controller.dataSource.value == 'cache' ? 'Dari cache' : 'Tersinkronisasi',
+                      style: GoogleFonts.poppins(fontSize: 10, color: isDark ? Colors.white38 : colorScheme.onSurface.withValues(alpha: 0.4)),
+                    ),
+                    if (controller.isSyncing.value) ...[
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 10,
+                        height: 10,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 1.5,
+                          color: isDark ? AppTheme.accentMustard : colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ],
+                )),
+              ],
+            ),
+          ),
           Container(
             decoration: BoxDecoration(
               gradient: isDark ? LinearGradient(colors: [AppTheme.glowPurple.withValues(alpha: 0.3), AppTheme.deepPurpleLight.withValues(alpha: 0.3)]) : null,

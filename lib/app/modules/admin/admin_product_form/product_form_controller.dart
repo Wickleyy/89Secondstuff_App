@@ -124,10 +124,19 @@ class AdminProductFormController extends GetxController {
       if (productToEdit == null) {
         // --- CREATE (INSERT) ---
         await _supabase.client.from('products').insert(productData);
-        Get.snackbar('Sukses', 'Produk berhasil ditambahkan');
+        Get.snackbar(
+          'Berhasil Ditambahkan!',
+          'Produk "${titleC.text}" telah berhasil ditambahkan ke toko.',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          icon: const Icon(Icons.check_circle, color: Colors.white),
+          duration: const Duration(seconds: 3),
+          margin: const EdgeInsets.all(16),
+          borderRadius: 12,
+        );
       } else {
         // --- UPDATE ---
-        // Hapus category_id dari map jika user tidak mengubahnya (null)
         if (selectedCategoryId.value == null) {
           productData.remove('category_id');
         }
@@ -137,13 +146,33 @@ class AdminProductFormController extends GetxController {
             .update(productData)
             .eq('id', productToEdit!.id);
 
-        Get.snackbar('Sukses', 'Produk berhasil diperbarui');
+        Get.snackbar(
+          'Berhasil Diperbarui!',
+          'Produk "${titleC.text}" telah berhasil diperbarui.',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.blue,
+          colorText: Colors.white,
+          icon: const Icon(Icons.edit, color: Colors.white),
+          duration: const Duration(seconds: 3),
+          margin: const EdgeInsets.all(16),
+          borderRadius: 12,
+        );
       }
 
       // Kembali ke list
-      Get.back(result: true); // Kirim result true agar list refresh
+      Get.back(result: true);
     } catch (e) {
-      Get.snackbar('Error', 'Gagal menyimpan produk: $e');
+      Get.snackbar(
+        'Gagal Menyimpan',
+        'Terjadi kesalahan: $e',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        icon: const Icon(Icons.error, color: Colors.white),
+        duration: const Duration(seconds: 4),
+        margin: const EdgeInsets.all(16),
+        borderRadius: 12,
+      );
     } finally {
       isLoading.value = false;
     }

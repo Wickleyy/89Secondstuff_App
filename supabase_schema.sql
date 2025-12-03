@@ -260,3 +260,24 @@ CREATE TRIGGER update_orders_updated_at
     BEFORE UPDATE ON orders
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
+
+-- =====================================================
+-- MESSAGES TABLE (untuk chat)
+-- Catatan: Tabel ini sudah ada di database, schema di bawah 
+-- hanya untuk dokumentasi jika perlu recreate
+-- =====================================================
+-- CREATE TABLE IF NOT EXISTS messages (
+--     id BIGSERIAL PRIMARY KEY,
+--     sender_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+--     receiver_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+--     message_text TEXT NOT NULL,
+--     is_read BOOLEAN DEFAULT false,
+--     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+-- );
+
+-- =====================================================
+-- NOTES:
+-- - Wishlist menggunakan Hive (local storage), tidak perlu table di Supabase
+-- - Cart juga menggunakan Hive (local storage)
+-- =====================================================
+

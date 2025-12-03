@@ -8,11 +8,32 @@ class AdminChatListController extends GetxController {
 
   var isLoading = true.obs;
   var chatList = <Profile>[].obs;
+  var onlineCount = 0.obs;
 
   @override
   void onInit() {
     super.onInit();
+    _supabase.joinPresenceChannel();
     fetchChatList();
+    
+    // Listen to online users changes for real-time count
+    ever(_supabase.onlineUsers, (_) {
+      _updateOnlineCount();
+    });
+  }
+
+  void _updateOnlineCount() {
+    int count = 0;
+    for (var profile in chatList) {
+      if (_supabase.isUserOnline(profile.id)) {
+        count++;
+      }
+    }
+    onlineCount.value = count;
+  }
+
+  bool isUserOnline(String userId) {
+    return _supabase.isUserOnline(userId);
   }
 
   void fetchChatList() async {
@@ -48,6 +69,7 @@ class AdminChatListController extends GetxController {
           .toList();
 
       chatList.assignAll(profiles);
+      _updateOnlineCount();
     } catch (e) {
       Get.snackbar(
         'Error',

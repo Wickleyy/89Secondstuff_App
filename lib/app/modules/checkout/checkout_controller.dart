@@ -9,6 +9,7 @@ import 'package:_89_secondstufff/app/data/services/supabase_service.dart';
 import 'package:_89_secondstufff/app/data/controllers/address_controller.dart';
 import 'package:_89_secondstufff/app/modules/account/shipping_address/models/shipping_address_model.dart';
 import 'package:_89_secondstufff/app/routes/app_pages.dart';
+import 'package:_89_secondstufff/app/modules/checkout/checkout_view.dart';
 
 class CheckoutController extends GetxController {
   final LocalStorageService _localStorage = Get.find<LocalStorageService>();
@@ -48,6 +49,34 @@ class CheckoutController extends GetxController {
 
   ShippingAddress? get selectedAddress => addressController.selectedAddress.value;
   bool get hasSelectedAddress => addressController.hasSelectedAddress;
+  List<ShippingAddress> get allAddresses => addressController.addresses;
+
+  void selectAddress(ShippingAddress address) {
+    addressController.selectAddress(address);
+  }
+
+  void showAddressSelector() {
+    if (allAddresses.isEmpty) {
+      Get.toNamed(AppRoutes.SHIPPING_ADDRESS);
+      return;
+    }
+    
+    Get.bottomSheet(
+      AddressSelectorSheet(
+        addresses: allAddresses,
+        selectedAddress: selectedAddress,
+        onSelect: (address) {
+          selectAddress(address);
+          Get.back();
+        },
+        onAddNew: () {
+          Get.back();
+          Get.toNamed(AppRoutes.SHIPPING_ADDRESS);
+        },
+      ),
+      isScrollControlled: true,
+    );
+  }
 
   String get userEmail => _supabase.currentUser?.email ?? '';
 

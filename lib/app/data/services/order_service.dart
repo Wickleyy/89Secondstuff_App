@@ -1,14 +1,21 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:_89_secondstufff/app/data/services/supabase_service.dart';
+import 'package:_89_secondstufff/app/data/services/local_storage_service.dart';
 import 'package:_89_secondstufff/app/data/models/order_model.dart';
 import 'package:_89_secondstufff/app/data/models/cart_item.dart';
 
 class OrderService extends GetxService {
   SupabaseService get _supabase => Get.find<SupabaseService>();
+  LocalStorageService get _localStorage => Get.find<LocalStorageService>();
 
   Future<OrderService> init() async {
     return this;
+  }
+
+  // Get orders from Hive cache (instant, offline)
+  List<Order> getCachedOrders() {
+    return _localStorage.getCachedOrders();
   }
 
   Future<Order?> createOrder({
@@ -65,7 +72,14 @@ class OrderService extends GetxService {
 
       debugPrint('[OrderService] Order items inserted: ${items.length}');
 
-      return await getOrderById(newOrderId);
+      final newOrder = await getOrderById(newOrderId);
+      
+      // Cache order ke Hive
+      if (newOrder != null) {
+        await _localStorage.addOrderToCache(newOrder);
+      }
+
+      return newOrder;
     } catch (e) {
       debugPrint('[OrderService] Error creating order: $e');
       throw Exception('Gagal membuat pesanan: $e');
@@ -100,6 +114,7 @@ class OrderService extends GetxService {
     }
   }
 
+  // Fetch from Supabase and update cache
   Future<List<Order>> getUserOrders() async {
     try {
       final user = _supabase.currentUser;
@@ -108,7 +123,7 @@ class OrderService extends GetxService {
         return [];
       }
 
-      debugPrint('[OrderService] Getting orders for user: ${user.id}');
+      debugPrint('[OrderService] Getting orders from Supabase for user: ${user.id}');
 
       final response = await _supabase.client
           .from('orders')
@@ -127,6 +142,10 @@ class OrderService extends GetxService {
           rethrow;
         }
       }).toList();
+
+      // Update Hive cache dengan data terbaru dari Supabase
+      await _localStorage.cacheOrders(orders);
+      debugPrint('[OrderService] Orders synced to Hive cache');
 
       return orders;
     } catch (e) {

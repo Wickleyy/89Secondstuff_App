@@ -70,13 +70,17 @@ class SignUpView extends GetView<AuthController> {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(20),
+          width: 100,
+          height: 100,
           decoration: BoxDecoration(
-            gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: isDark ? [AppTheme.deepPurpleLight, AppTheme.deepPurpleDark] : [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.7)]),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: isDark ? [BoxShadow(color: AppTheme.glowPurple.withValues(alpha: 0.3), blurRadius: 16)] : [BoxShadow(color: colorScheme.primary.withValues(alpha: 0.3), blurRadius: 12)],
+            gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: isDark ? [AppTheme.deepPurpleLight, AppTheme.deepPurpleDark] : [colorScheme.primary.withValues(alpha: 0.1), colorScheme.primary.withValues(alpha: 0.05)]),
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: isDark ? [BoxShadow(color: AppTheme.glowPurple.withValues(alpha: 0.3), blurRadius: 16)] : [BoxShadow(color: colorScheme.primary.withValues(alpha: 0.2), blurRadius: 12)],
           ),
-          child: Icon(Icons.person_add_outlined, size: 44, color: isDark ? AppTheme.accentMustard : Colors.white),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(25),
+            child: Image.asset('assets/logo/icon5.png', fit: BoxFit.cover),
+          ),
         ),
         const SizedBox(height: 24),
         ShaderMask(

@@ -1,11 +1,31 @@
-class OrderItem {
+import 'package:hive/hive.dart';
+
+part 'order_model.g.dart';
+
+@HiveType(typeId: 2)
+class OrderItem extends HiveObject {
+  @HiveField(0)
   final int id;
+
+  @HiveField(1)
   final String orderId;
+
+  @HiveField(2)
   final int productId;
+
+  @HiveField(3)
   final String productTitle;
+
+  @HiveField(4)
   final String productImage;
+
+  @HiveField(5)
   final double price;
+
+  @HiveField(6)
   final int quantity;
+
+  @HiveField(7)
   final double subtotal;
 
   OrderItem({
@@ -101,14 +121,30 @@ class OrderItem {
   }
 }
 
-class Order {
+@HiveType(typeId: 3)
+class Order extends HiveObject {
+  @HiveField(0)
   final String id;
+
+  @HiveField(1)
   final String oderId;
+
+  @HiveField(2)
   final String userId;
+
+  @HiveField(3)
   final int? shippingAddressId;
+
+  @HiveField(4)
   final double totalAmount;
+
+  @HiveField(5)
   final String status;
+
+  @HiveField(6)
   final DateTime createdAt;
+
+  @HiveField(7)
   final List<OrderItem>? items;
 
   Order({

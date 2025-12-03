@@ -5,6 +5,7 @@ import 'package:_89_secondstufff/app/routes/app_pages.dart';
 import 'package:_89_secondstufff/app/themes/theme_controller.dart';
 import 'package:_89_secondstufff/app/themes/app_theme.dart';
 import 'package:_89_secondstufff/app/data/services/supabase_service.dart';
+import 'package:_89_secondstufff/app/modules/account/account_controller.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -15,11 +16,14 @@ class AppDrawer extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final ThemeController themeController = Get.find();
     final SupabaseService supabase = Get.find<SupabaseService>();
-    final user = supabase.currentUser;
-
-    final String email = user?.email ?? "Tamu";
-    final String username = email.contains('@') ? email.split('@')[0] : email;
-    final String initial = email.isNotEmpty ? email[0].toUpperCase() : "T";
+    
+    // Try to get AccountController for synced profile data
+    AccountController? accountController;
+    try {
+      accountController = Get.find<AccountController>();
+    } catch (_) {
+      // AccountController not registered yet
+    }
 
     return Drawer(
       backgroundColor: isDark ? AppTheme.deepPurpleDark : theme.colorScheme.surface,
@@ -36,63 +40,8 @@ class AppDrawer extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            // Header dengan gradient
-            Container(
-              padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isDark
-                      ? [AppTheme.deepPurpleLight, AppTheme.deepPurpleDark]
-                      : [theme.colorScheme.primary, theme.colorScheme.primary.withValues(alpha: 0.8)],
-                ),
-                borderRadius: const BorderRadius.only(bottomRight: Radius.circular(40)),
-                boxShadow: isDark
-                    ? [BoxShadow(color: AppTheme.glowPurple.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 8))]
-                    : null,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Avatar dengan glow
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: isDark ? [AppTheme.accentMustard, AppTheme.accentRed] : [Colors.white, Colors.white70],
-                      ),
-                      boxShadow: isDark
-                          ? [BoxShadow(color: AppTheme.accentMustard.withValues(alpha: 0.5), blurRadius: 16, spreadRadius: 2)]
-                          : null,
-                    ),
-                    child: CircleAvatar(
-                      radius: 36,
-                      backgroundColor: isDark ? AppTheme.deepPurpleDark : theme.colorScheme.primary,
-                      child: Text(
-                        initial,
-                        style: GoogleFonts.poppins(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? AppTheme.accentMustard : Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    username,
-                    style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    email,
-                    style: GoogleFonts.poppins(fontSize: 13, color: Colors.white70),
-                  ),
-                ],
-              ),
-            ),
+            // Header dengan gradient - using Obx for reactive updates
+            _buildHeader(context, isDark, theme, supabase, accountController),
             const SizedBox(height: 16),
 
             // Menu Items
@@ -243,6 +192,127 @@ class AppDrawer extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, bool isDark, ThemeData theme, SupabaseService supabase, AccountController? accountController) {
+    // Fallback values from auth if AccountController not available
+    final user = supabase.currentUser;
+    final fallbackEmail = user?.email ?? "Tamu";
+    final fallbackUsername = fallbackEmail.contains('@') ? fallbackEmail.split('@')[0] : fallbackEmail;
+    final fallbackInitial = fallbackEmail.isNotEmpty ? fallbackEmail[0].toUpperCase() : "T";
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [AppTheme.deepPurpleLight, AppTheme.deepPurpleDark]
+              : [theme.colorScheme.primary, theme.colorScheme.primary.withValues(alpha: 0.8)],
+        ),
+        borderRadius: const BorderRadius.only(bottomRight: Radius.circular(40)),
+        boxShadow: isDark
+            ? [BoxShadow(color: AppTheme.glowPurple.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 8))]
+            : null,
+      ),
+      child: accountController != null
+          ? Obx(() {
+              final avatarUrl = accountController.avatarUrl.value;
+              final username = accountController.username.value.isNotEmpty 
+                  ? accountController.username.value 
+                  : fallbackUsername;
+              final email = accountController.email.value.isNotEmpty 
+                  ? accountController.email.value 
+                  : fallbackEmail;
+              final initial = accountController.initial.value.isNotEmpty 
+                  ? accountController.initial.value 
+                  : fallbackInitial;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Avatar dengan glow
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: isDark ? [AppTheme.accentMustard, AppTheme.accentRed] : [Colors.white, Colors.white70],
+                      ),
+                      boxShadow: isDark
+                          ? [BoxShadow(color: AppTheme.accentMustard.withValues(alpha: 0.5), blurRadius: 16, spreadRadius: 2)]
+                          : null,
+                    ),
+                    child: CircleAvatar(
+                      radius: 36,
+                      backgroundColor: isDark ? AppTheme.deepPurpleDark : theme.colorScheme.primary,
+                      backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                      child: avatarUrl.isEmpty
+                          ? Text(
+                              initial,
+                              style: GoogleFonts.poppins(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? AppTheme.accentMustard : Colors.white,
+                              ),
+                            )
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    username,
+                    style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    email,
+                    style: GoogleFonts.poppins(fontSize: 13, color: Colors.white70),
+                  ),
+                ],
+              );
+            })
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: isDark ? [AppTheme.accentMustard, AppTheme.accentRed] : [Colors.white, Colors.white70],
+                    ),
+                    boxShadow: isDark
+                        ? [BoxShadow(color: AppTheme.accentMustard.withValues(alpha: 0.5), blurRadius: 16, spreadRadius: 2)]
+                        : null,
+                  ),
+                  child: CircleAvatar(
+                    radius: 36,
+                    backgroundColor: isDark ? AppTheme.deepPurpleDark : theme.colorScheme.primary,
+                    child: Text(
+                      fallbackInitial,
+                      style: GoogleFonts.poppins(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? AppTheme.accentMustard : Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  fallbackUsername,
+                  style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  fallbackEmail,
+                  style: GoogleFonts.poppins(fontSize: 13, color: Colors.white70),
+                ),
+              ],
+            ),
     );
   }
 }

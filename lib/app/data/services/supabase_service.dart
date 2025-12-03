@@ -4,6 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseService extends GetxService {
   late final SupabaseClient client;
+  RealtimeChannel? _presenceChannel;
+  var onlineUsers = <String>{}.obs;
 
   User? get currentUser => client.auth.currentUser;
 
@@ -32,5 +34,74 @@ class SupabaseService extends GetxService {
       rethrow;
     }
     return this;
+  }
+
+  void joinPresenceChannel() {
+    if (currentUser == null) return;
+    
+    _presenceChannel = client.channel('online-users');
+    
+    _presenceChannel!
+        .onPresenceSync((_) {
+          // Re-sync all presences on sync event
+          final presences = _presenceChannel!.presenceState();
+          final users = <String>{};
+          for (var presence in presences) {
+            try {
+              // Try to get user_id from different possible structures
+              final dynamic presenceMap = presence;
+              if (presenceMap is Map) {
+                if (presenceMap['user_id'] != null) {
+                  users.add(presenceMap['user_id'] as String);
+                }
+              }
+            } catch (_) {}
+          }
+          onlineUsers.assignAll(users);
+        })
+        .onPresenceJoin((payload) {
+          for (var presence in payload.newPresences) {
+            try {
+              final dynamic presenceMap = presence;
+              if (presenceMap is Map && presenceMap['user_id'] != null) {
+                onlineUsers.add(presenceMap['user_id'] as String);
+              }
+            } catch (_) {}
+          }
+        })
+        .onPresenceLeave((payload) {
+          for (var presence in payload.leftPresences) {
+            try {
+              final dynamic presenceMap = presence;
+              if (presenceMap is Map && presenceMap['user_id'] != null) {
+                onlineUsers.remove(presenceMap['user_id'] as String);
+              }
+            } catch (_) {}
+          }
+        })
+        .subscribe((status, error) async {
+          if (status == RealtimeSubscribeStatus.subscribed) {
+            await _presenceChannel!.track({
+              'user_id': currentUser!.id,
+              'online_at': DateTime.now().toIso8601String(),
+            });
+          }
+        });
+  }
+
+  void leavePresenceChannel() {
+    _presenceChannel?.untrack();
+    _presenceChannel?.unsubscribe();
+    _presenceChannel = null;
+  }
+
+  bool isUserOnline(String userId) {
+    return onlineUsers.contains(userId);
+  }
+
+  @override
+  void onClose() {
+    leavePresenceChannel();
+    super.onClose();
   }
 }

@@ -44,15 +44,6 @@ class ChatView extends GetView<ChatController> {
       child: Row(
         children: [
           Container(
-            decoration: BoxDecoration(
-              gradient: isDark ? LinearGradient(colors: [AppTheme.glowPurple.withValues(alpha: 0.3), AppTheme.deepPurpleLight.withValues(alpha: 0.3)]) : null,
-              color: isDark ? null : colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: IconButton(icon: Icon(Icons.arrow_back_rounded, color: isDark ? AppTheme.accentMustard : colorScheme.primary), onPressed: () => Get.back()),
-          ),
-          const SizedBox(width: 14),
-          Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               gradient: LinearGradient(colors: isDark ? [AppTheme.accentMustard.withValues(alpha: 0.2), AppTheme.accentRed.withValues(alpha: 0.1)] : [colorScheme.primary.withValues(alpha: 0.15), colorScheme.primary.withValues(alpha: 0.05)]),
@@ -66,13 +57,26 @@ class ChatView extends GetView<ChatController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Admin Support', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : colorScheme.onSurface)),
-                Row(
+                Obx(() => Row(
                   children: [
-                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
+                    Container(
+                      width: 8, 
+                      height: 8, 
+                      decoration: BoxDecoration(
+                        color: controller.isAdminOnline.value ? Colors.green : Colors.grey,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                     const SizedBox(width: 6),
-                    Text('Online', style: GoogleFonts.poppins(fontSize: 12, color: Colors.green)),
+                    Text(
+                      controller.isAdminOnline.value ? 'Online' : 'Offline',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12, 
+                        color: controller.isAdminOnline.value ? Colors.green : Colors.grey,
+                      ),
+                    ),
                   ],
-                ),
+                )),
               ],
             ),
           ),
