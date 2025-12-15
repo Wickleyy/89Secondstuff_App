@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "570092460540",
+    "project_id": "secondstuff-app",
+    "storage_bucket": "secondstuff-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:570092460540:android:1638664fae303f5feefa79",
+        "android_client_info": {
+          "package_name": "com.example.u_89_secondstufff"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDQl8iVPsuyfIfYeKbZI06eGWsiA4rAIpQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
