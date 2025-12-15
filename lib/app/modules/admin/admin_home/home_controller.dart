@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:_89_secondstufff/app/data/services/supabase_service.dart';
+import 'package:_89_secondstufff/app/data/services/notification_service.dart';
 import 'package:_89_secondstufff/app/routes/app_pages.dart';
 import 'package:_89_secondstufff/app/themes/app_theme.dart';
 
@@ -406,6 +407,38 @@ class AdminHomeController extends GetxController {
     if (confirmed == true) {
       await _supabase.client.auth.signOut();
       Get.offAllNamed(AppRoutes.LOGIN);
+    }
+  }
+
+  // Send promo notification to all users
+  void sendPromoNotification({
+    required String title,
+    required String message,
+    String? promoCode,
+  }) {
+    if (Get.isRegistered<NotificationService>()) {
+      NotificationService.to.showPromoNotification(
+        title: title,
+        message: message,
+        promoCode: promoCode,
+      );
+      
+      Get.snackbar(
+        'Promo Terkirim!',
+        'Notifikasi promo berhasil dikirim',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        icon: const Icon(Icons.check_circle, color: Colors.white),
+      );
+    } else {
+      Get.snackbar(
+        'Error',
+        'Notification service tidak tersedia',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
   }
 }

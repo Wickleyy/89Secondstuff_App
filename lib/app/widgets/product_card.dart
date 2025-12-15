@@ -116,6 +116,29 @@ class _ProductCardState extends State<ProductCard> {
                             ),
                           ),
                         ),
+                      // Stock badge
+                      if (widget.product.isOutOfStock || widget.product.isLowStock)
+                        Positioned(
+                          top: 8,
+                          left: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: widget.product.isOutOfStock 
+                                ? Colors.red 
+                                : Colors.orange,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              widget.product.isOutOfStock ? 'Habis' : 'Sisa ${widget.product.stock}',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),

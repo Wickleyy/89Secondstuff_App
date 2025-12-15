@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:_89_secondstufff/app/data/models/message_model.dart';
 import 'package:_89_secondstufff/app/data/services/supabase_service.dart';
+import 'package:_89_secondstufff/app/data/services/notification_service.dart';
 
 class ChatController extends GetxController {
   final TextEditingController textController = TextEditingController();
@@ -98,6 +99,8 @@ class ChatController extends GetxController {
     if (adminId.value.isEmpty) return;
 
     _messageSubscription?.cancel();
+    
+    int previousMessageCount = messages.length;
 
     _messageSubscription = _supabase.client
         .from('messages')
@@ -119,6 +122,22 @@ class ChatController extends GetxController {
       final newMessages = filtered.map((e) => Message.fromJson(e)).toList()
         ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
+      // Check if there's a new message from admin
+      if (newMessages.length > previousMessageCount) {
+        final latestMessage = newMessages.last;
+        if (latestMessage.senderId == adminId.value) {
+          // Show notification for new message from admin
+          if (Get.isRegistered<NotificationService>()) {
+            NotificationService.to.showChatNotification(
+              senderName: 'Admin',
+              message: latestMessage.text,
+              senderId: latestMessage.senderId,
+            );
+          }
+        }
+      }
+      
+      previousMessageCount = newMessages.length;
       messages.assignAll(newMessages);
       scrollToBottom();
     });

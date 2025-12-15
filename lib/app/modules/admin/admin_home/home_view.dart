@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:_89_secondstufff/app/routes/app_pages.dart';
 import 'package:_89_secondstufff/app/themes/app_theme.dart';
 import 'home_controller.dart';
@@ -13,7 +12,6 @@ class AdminHomeView extends GetView<AdminHomeController> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
     return Scaffold(
       body: Container(
@@ -36,7 +34,7 @@ class AdminHomeView extends GetView<AdminHomeController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildStatsGrid(isDark, currencyFormat),
+                        _buildStatsGrid(isDark),
                         const SizedBox(height: 24),
                         _buildSectionTitle('MENU UTAMA', isDark),
                         const SizedBox(height: 12),
@@ -175,7 +173,7 @@ class AdminHomeView extends GetView<AdminHomeController> {
     );
   }
 
-  Widget _buildStatsGrid(bool isDark, NumberFormat currencyFormat) {
+  Widget _buildStatsGrid(bool isDark) {
     return Obx(() {
       if (controller.isLoading.value) {
         return Center(child: CircularProgressIndicator(color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary));
@@ -186,51 +184,14 @@ class AdminHomeView extends GetView<AdminHomeController> {
             children: [
               _buildStatCard('Produk', controller.totalProducts.value.toString(), Icons.inventory_2_rounded, isDark ? AppTheme.accentMustard : Colors.orange, isDark, onTap: controller.showProductsDialog),
               const SizedBox(width: 12),
-              _buildStatCard('Pesanan', controller.totalOrders.value.toString(), Icons.shopping_bag_rounded, Colors.blue, isDark, onTap: controller.showOrdersDialog),
+              _buildStatCard('Chat', controller.activeChats.value.toString(), Icons.chat_bubble_rounded, Colors.green, isDark, onTap: controller.goToChats),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              _buildStatCard('Chat', controller.activeChats.value.toString(), Icons.chat_bubble_rounded, Colors.green, isDark, onTap: controller.goToChats),
-              const SizedBox(width: 12),
               _buildStatCard('User', controller.totalUsers.value.toString(), Icons.people_rounded, Colors.purple, isDark, onTap: controller.goToUsers),
             ],
-          ),
-          const SizedBox(height: 12),
-          // Revenue Card (Full Width)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: isDark
-                  ? LinearGradient(colors: [AppTheme.accentMustard.withValues(alpha: 0.2), AppTheme.accentRed.withValues(alpha: 0.15)])
-                  : LinearGradient(colors: [AppTheme.lightPrimary.withValues(alpha: 0.1), AppTheme.lightSupport.withValues(alpha: 0.1)]),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: isDark ? AppTheme.accentMustard.withValues(alpha: 0.3) : AppTheme.lightPrimary.withValues(alpha: 0.2)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: [AppTheme.accentMustard.withValues(alpha: 0.3), AppTheme.accentRed.withValues(alpha: 0.2)]),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(Icons.account_balance_wallet_rounded, color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary, size: 28),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Total Pendapatan', style: GoogleFonts.poppins(fontSize: 12, color: isDark ? Colors.white60 : Colors.grey[600])),
-                      Text(currencyFormat.format(controller.totalRevenue.value), style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       );
@@ -285,10 +246,8 @@ class AdminHomeView extends GetView<AdminHomeController> {
       childAspectRatio: 1.15,
       children: [
         _buildMenuCard('Kelola Produk', 'Edit/Hapus Barang', Icons.inventory_2_rounded, isDark ? AppTheme.accentMustard : Colors.orange, controller.goToProducts, isDark),
-        _buildMenuCard('Pesanan', 'Lihat Semua Order', Icons.shopping_bag_rounded, Colors.blue, controller.showOrdersDialog, isDark),
         _buildMenuCard('Chat Pelanggan', 'Balas Pesan', Icons.chat_bubble_rounded, Colors.green, controller.goToChats, isDark),
         _buildMenuCard('Kelola User', 'Lihat/Hapus Akun', Icons.people_rounded, Colors.purple, controller.goToUsers, isDark),
-        _buildMenuCard('Laporan', 'Statistik Penjualan', Icons.bar_chart_rounded, Colors.teal, () => _showReportDialog(isDark), isDark),
         _buildMenuCard('Pengaturan', 'Akun & Preferensi', Icons.settings_rounded, Colors.grey, () => _showSettingsDialog(isDark), isDark),
       ],
     );
@@ -385,6 +344,8 @@ class AdminHomeView extends GetView<AdminHomeController> {
         children: [
           _buildQuickActionTile(Icons.add_box_rounded, 'Tambah Produk Baru', 'Buat listing produk', controller.goToAddProduct, isDark ? AppTheme.accentMustard : Colors.orange, isDark),
           Divider(color: isDark ? Colors.white12 : Colors.grey[200], height: 24),
+          _buildQuickActionTile(Icons.campaign_rounded, 'Kirim Promo', 'Broadcast notifikasi promo', () => _showPromoDialog(isDark), Colors.pink, isDark),
+          Divider(color: isDark ? Colors.white12 : Colors.grey[200], height: 24),
           _buildQuickActionTile(Icons.category_rounded, 'Lihat Kategori', 'Kelola kategori produk', () => Get.toNamed(AppRoutes.CATEGORIES), Colors.teal, isDark),
           Divider(color: isDark ? Colors.white12 : Colors.grey[200], height: 24),
           _buildQuickActionTile(Icons.search_rounded, 'Cari Produk', 'Pencarian cepat', () => Get.toNamed(AppRoutes.SEARCH), Colors.blue, isDark),
@@ -419,53 +380,6 @@ class AdminHomeView extends GetView<AdminHomeController> {
             Icon(Icons.chevron_right, color: isDark ? Colors.white30 : Colors.grey[400]),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showReportDialog(bool isDark) {
-    final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
-    
-    Get.dialog(
-      AlertDialog(
-        backgroundColor: isDark ? AppTheme.deepPurpleLight : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Icon(Icons.bar_chart_rounded, color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary),
-            const SizedBox(width: 10),
-            Text('Laporan', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
-          ],
-        ),
-        content: Obx(() => Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildReportItem('Total Produk', controller.totalProducts.value.toString(), Icons.inventory_2, isDark),
-            _buildReportItem('Total Pesanan', controller.totalOrders.value.toString(), Icons.shopping_bag, isDark),
-            _buildReportItem('Total Pelanggan', controller.totalUsers.value.toString(), Icons.people, isDark),
-            _buildReportItem('Total Pendapatan', currencyFormat.format(controller.totalRevenue.value), Icons.account_balance_wallet, isDark),
-          ],
-        )),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('TUTUP', style: TextStyle(color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReportItem(String label, String value, IconData icon, bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary),
-          const SizedBox(width: 12),
-          Expanded(child: Text(label, style: GoogleFonts.poppins(fontSize: 13, color: isDark ? Colors.white70 : Colors.grey[700]))),
-          Text(value, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
-        ],
       ),
     );
   }
@@ -509,6 +423,103 @@ class AdminHomeView extends GetView<AdminHomeController> {
       onTap: onTap,
       contentPadding: EdgeInsets.zero,
       dense: true,
+    );
+  }
+
+  void _showPromoDialog(bool isDark) {
+    final titleController = TextEditingController();
+    final messageController = TextEditingController();
+    final promoCodeController = TextEditingController();
+
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: isDark ? AppTheme.deepPurpleLight : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.campaign_rounded, color: Colors.pink),
+            const SizedBox(width: 10),
+            Text('Kirim Promo', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                style: GoogleFonts.poppins(color: isDark ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
+                  labelText: 'Judul Promo',
+                  labelStyle: GoogleFonts.poppins(color: isDark ? Colors.white54 : Colors.grey),
+                  hintText: 'Contoh: Flash Sale 50%!',
+                  hintStyle: GoogleFonts.poppins(color: isDark ? Colors.white30 : Colors.grey[400]),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.grey[300]!),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: messageController,
+                style: GoogleFonts.poppins(color: isDark ? Colors.white : Colors.black87),
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Pesan Promo',
+                  labelStyle: GoogleFonts.poppins(color: isDark ? Colors.white54 : Colors.grey),
+                  hintText: 'Contoh: Diskon 50% untuk semua produk!',
+                  hintStyle: GoogleFonts.poppins(color: isDark ? Colors.white30 : Colors.grey[400]),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.grey[300]!),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: promoCodeController,
+                style: GoogleFonts.poppins(color: isDark ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
+                  labelText: 'Kode Promo (Opsional)',
+                  labelStyle: GoogleFonts.poppins(color: isDark ? Colors.white54 : Colors.grey),
+                  hintText: 'Contoh: PROMO50',
+                  hintStyle: GoogleFonts.poppins(color: isDark ? Colors.white30 : Colors.grey[400]),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.grey[300]!),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('BATAL', style: TextStyle(color: isDark ? Colors.white70 : Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (titleController.text.isEmpty || messageController.text.isEmpty) {
+                Get.snackbar('Error', 'Judul dan pesan harus diisi', snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+                return;
+              }
+              controller.sendPromoNotification(
+                title: titleController.text,
+                message: messageController.text,
+                promoCode: promoCodeController.text.isEmpty ? null : promoCodeController.text,
+              );
+              Get.back();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.pink),
+            child: Text('KIRIM', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
     );
   }
 }

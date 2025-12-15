@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:_89_secondstufff/app/data/services/supabase_service.dart';
 import 'package:_89_secondstufff/app/data/services/local_storage_service.dart';
+import 'package:_89_secondstufff/app/data/services/notification_service.dart';
 import 'package:_89_secondstufff/app/data/models/order_model.dart';
 import 'package:_89_secondstufff/app/data/models/cart_item.dart';
 
@@ -77,6 +78,24 @@ class OrderService extends GetxService {
       // Cache order ke Hive
       if (newOrder != null) {
         await _localStorage.addOrderToCache(newOrder);
+        
+        // Send notification to admin about new order
+        if (Get.isRegistered<NotificationService>()) {
+          // Get user profile for customer name
+          final userProfile = await _supabase.client
+              .from('profiles')
+              .select('full_name')
+              .eq('id', user.id)
+              .maybeSingle();
+          
+          final customerName = userProfile?['full_name'] ?? 'Customer';
+          
+          NotificationService.to.showNewOrderNotification(
+            orderId: newOrderId,
+            customerName: customerName,
+            total: total,
+          );
+        }
       }
 
       return newOrder;
@@ -191,6 +210,14 @@ class OrderService extends GetxService {
           .from('orders')
           .update({'status': status})
           .eq('id', orderId);
+
+      // Send notification to customer about status update
+      if (Get.isRegistered<NotificationService>()) {
+        NotificationService.to.showOrderStatusNotification(
+          orderId: orderId,
+          status: status,
+        );
+      }
 
       return true;
     } catch (e) {

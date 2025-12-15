@@ -46,6 +46,12 @@ dependencies:
   lottie: ^3.1.0
   uuid: ^4.3.3
 
+  # Push Notifications
+  firebase_core: ^3.8.1
+  firebase_messaging: ^15.1.6
+  flutter_local_notifications: ^18.0.1
+  timeago: ^3.7.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -34,6 +34,7 @@ class AdminUserListController extends GetxController {
   Future<void> fetchUsers() async {
     try {
       isLoading.value = true;
+      debugPrint('[AdminUserList] Fetching users...');
       
       // Ambil semua user dengan role = 'user'
       final profilesResponse = await _supabase.client
@@ -42,42 +43,55 @@ class AdminUserListController extends GetxController {
           .eq('role', 'user')
           .order('created_at', ascending: false);
 
+      debugPrint('[AdminUserList] Profiles response: $profilesResponse');
+
       final profilesList = List<Map<String, dynamic>>.from(profilesResponse);
+      debugPrint('[AdminUserList] Found ${profilesList.length} users');
 
       // Untuk setiap user, ambil statistik order mereka
       for (var i = 0; i < profilesList.length; i++) {
         final userId = profilesList[i]['id'];
         
-        // Ambil orders user ini dengan order_items (tabel terpisah)
-        final ordersResponse = await _supabase.client
-            .from('orders')
-            .select('id, total_amount, status, order_items(quantity)')
-            .eq('user_id', userId);
+        try {
+          // Ambil orders user ini dengan order_items (tabel terpisah)
+          final ordersResponse = await _supabase.client
+              .from('orders')
+              .select('id, total_amount, status, order_items(quantity)')
+              .eq('user_id', userId);
 
-        final ordersList = List<Map<String, dynamic>>.from(ordersResponse);
-        
-        // Hitung statistik
-        int totalOrders = ordersList.length;
-        int totalItems = 0;
-        double totalSpent = 0;
+          final ordersList = List<Map<String, dynamic>>.from(ordersResponse);
+          
+          // Hitung statistik
+          int totalOrders = ordersList.length;
+          int totalItems = 0;
+          double totalSpent = 0;
 
-        for (var order in ordersList) {
-          totalSpent += (order['total_amount'] ?? 0).toDouble();
-          // order_items adalah relasi ke tabel order_items
-          final items = order['order_items'] as List? ?? [];
-          for (var item in items) {
-            totalItems += (item['quantity'] as int? ?? 1);
+          for (var order in ordersList) {
+            totalSpent += (order['total_amount'] ?? 0).toDouble();
+            // order_items adalah relasi ke tabel order_items
+            final items = order['order_items'] as List? ?? [];
+            for (var item in items) {
+              totalItems += (item['quantity'] as int? ?? 1);
+            }
           }
-        }
 
-        // Tambahkan statistik ke profile
-        profilesList[i]['total_orders'] = totalOrders;
-        profilesList[i]['total_items'] = totalItems;
-        profilesList[i]['total_spent'] = totalSpent;
+          // Tambahkan statistik ke profile
+          profilesList[i]['total_orders'] = totalOrders;
+          profilesList[i]['total_items'] = totalItems;
+          profilesList[i]['total_spent'] = totalSpent;
+        } catch (orderError) {
+          debugPrint('[AdminUserList] Error fetching orders for user $userId: $orderError');
+          // Set default values jika gagal fetch orders
+          profilesList[i]['total_orders'] = 0;
+          profilesList[i]['total_items'] = 0;
+          profilesList[i]['total_spent'] = 0.0;
+        }
       }
 
       users.assignAll(profilesList);
+      debugPrint('[AdminUserList] Users loaded successfully: ${users.length}');
     } catch (e) {
+      debugPrint('[AdminUserList] Error: $e');
       Get.snackbar('Error', 'Gagal memuat data user: $e',
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red,

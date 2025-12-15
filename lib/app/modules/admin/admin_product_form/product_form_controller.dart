@@ -6,6 +6,7 @@ import 'package:_89_secondstufff/app/data/models/product_model.dart';
 import 'package:_89_secondstufff/app/data/models/category_model.dart';
 import 'package:_89_secondstufff/app/data/services/supabase_service.dart';
 import 'package:_89_secondstufff/app/data/services/storage_service.dart';
+import 'package:_89_secondstufff/app/data/services/notification_service.dart';
 
 class AdminProductFormController extends GetxController {
   final SupabaseService _supabase = Get.find<SupabaseService>();
@@ -21,6 +22,7 @@ class AdminProductFormController extends GetxController {
   final titleC = TextEditingController();
   final priceC = TextEditingController();
   final descriptionC = TextEditingController();
+  final stockC = TextEditingController();
 
   // State
   var isLoading = false.obs;
@@ -61,6 +63,7 @@ class AdminProductFormController extends GetxController {
     titleC.text = productToEdit!.title;
     priceC.text = productToEdit!.price.toStringAsFixed(0);
     descriptionC.text = productToEdit!.description;
+    stockC.text = productToEdit!.stock.toString();
     existingImageUrl.value = productToEdit!.image;
 
     // Kita butuh category_id. Karena Product model kita hanya menyimpan nama kategori,
@@ -111,11 +114,13 @@ class AdminProductFormController extends GetxController {
       }
 
       // 2. Siapkan Data
+      final int stockValue = int.tryParse(stockC.text) ?? 1;
       final productData = {
         'title': titleC.text,
         'price': double.parse(priceC.text),
         'description': descriptionC.text,
         'image_url': imageUrl,
+        'stock': stockValue,
         // Jika edit dan kategori tidak diubah, gunakan yang lama (tapi kita butuh ID-nya)
         // Sederhananya: Wajibkan pilih kategori saat ini
         'category_id': selectedCategoryId.value,
@@ -123,7 +128,20 @@ class AdminProductFormController extends GetxController {
 
       if (productToEdit == null) {
         // --- CREATE (INSERT) ---
-        await _supabase.client.from('products').insert(productData);
+        final response = await _supabase.client
+            .from('products')
+            .insert(productData)
+            .select()
+            .single();
+        
+        // Send notification for new product
+        if (Get.isRegistered<NotificationService>()) {
+          NotificationService.to.showNewProductNotification(
+            productName: titleC.text,
+            price: double.parse(priceC.text),
+            productId: response['id'],
+          );
+        }
         
         // Kembali ke list dulu
         Get.back(result: true);
@@ -193,6 +211,7 @@ class AdminProductFormController extends GetxController {
     titleC.dispose();
     priceC.dispose();
     descriptionC.dispose();
+    stockC.dispose();
     super.onClose();
   }
 }

@@ -44,6 +44,8 @@ class AdminProductFormView extends GetView<AdminProductFormController> {
                           const SizedBox(height: 16),
                           _buildTextField(controller.priceC, 'Harga', Icons.attach_money, isDark, prefix: 'Rp ', keyboardType: TextInputType.number, validator: (v) => v == null || v.isEmpty ? 'Harga wajib diisi' : null),
                           const SizedBox(height: 16),
+                          _buildTextField(controller.stockC, 'Jumlah Stok', Icons.inventory_2_outlined, isDark, keyboardType: TextInputType.number, validator: (v) => v == null || v.isEmpty ? 'Stok wajib diisi' : null),
+                          const SizedBox(height: 16),
                           _buildCategoryDropdown(isDark),
                           const SizedBox(height: 16),
                           _buildTextField(controller.descriptionC, 'Deskripsi Produk', Icons.description_outlined, isDark, maxLines: 4, validator: (v) => v == null || v.isEmpty ? 'Deskripsi wajib diisi' : null),

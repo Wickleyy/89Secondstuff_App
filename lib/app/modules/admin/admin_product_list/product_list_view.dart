@@ -133,7 +133,23 @@ class AdminProductListView extends GetView<AdminProductListController> {
             ),
           ),
         ),
-        title: Text(product.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15, color: isDark ? Colors.white : AppTheme.lightOnText)),
+        title: Row(
+          children: [
+            Expanded(child: Text(product.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15, color: isDark ? Colors.white : AppTheme.lightOnText))),
+            // Stock badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: product.isOutOfStock ? Colors.red : (product.isLowStock ? Colors.orange : Colors.green),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                product.isOutOfStock ? 'Habis' : 'Stok: ${product.stock}',
+                style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 6),
           child: Container(

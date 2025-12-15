@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:_89_secondstufff/firebase_options.dart';
 import 'package:_89_secondstufff/app/routes/app_pages.dart';
 import 'package:_89_secondstufff/app/themes/app_theme.dart';
 import 'package:_89_secondstufff/app/themes/theme_controller.dart';
@@ -14,6 +16,7 @@ import 'package:_89_secondstufff/app/data/services/location_service.dart';
 import 'package:_89_secondstufff/app/data/services/payment_service.dart';
 import 'package:_89_secondstufff/app/data/services/order_service.dart';
 import 'package:_89_secondstufff/app/data/services/wishlist_service.dart';
+import 'package:_89_secondstufff/app/data/services/notification_service.dart';
 import 'package:_89_secondstufff/app/data/controllers/address_controller.dart';
 import 'package:_89_secondstufff/app/data/models/profiles_model.dart';
 
@@ -25,6 +28,12 @@ Future<void> main() async {
   // 0. Load environment variables FIRST
   await dotenv.load(fileName: ".env");
   debugPrint('[INIT] dotenv loaded');
+
+  // 1. Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  debugPrint('[INIT] Firebase initialized');
 
   // Initialize date formatting for Indonesian locale
   await initializeDateFormatting('id_ID', null);
@@ -79,8 +88,16 @@ Future<void> main() async {
   } catch (e) {
     debugPrint('[INIT] Wishlist service failed: $e');
   }
+
+  // 8. Notification Service
+  try {
+    await Get.putAsync(() => NotificationService().init());
+    debugPrint('[INIT] Notification service initialized');
+  } catch (e) {
+    debugPrint('[INIT] Notification service failed: $e');
+  }
   
-  // 8. AddressController - lazy init
+  // 9. AddressController - lazy init
   Get.lazyPut(() => AddressController());
   debugPrint('[INIT] AddressController registered (lazy)');
 

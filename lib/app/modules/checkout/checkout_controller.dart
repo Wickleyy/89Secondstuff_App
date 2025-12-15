@@ -6,6 +6,7 @@ import 'package:_89_secondstufff/app/data/services/local_storage_service.dart';
 import 'package:_89_secondstufff/app/data/services/payment_service.dart';
 import 'package:_89_secondstufff/app/data/services/order_service.dart';
 import 'package:_89_secondstufff/app/data/services/supabase_service.dart';
+import 'package:_89_secondstufff/app/data/services/notification_service.dart';
 import 'package:_89_secondstufff/app/data/controllers/address_controller.dart';
 import 'package:_89_secondstufff/app/modules/account/shipping_address/models/shipping_address_model.dart';
 import 'package:_89_secondstufff/app/routes/app_pages.dart';
@@ -161,6 +162,14 @@ class CheckoutController extends GetxController {
       transactionId: result?['transaction_id'],
       paymentMethod: result?['payment_type'],
     );
+
+    // Send payment success notification
+    if (Get.isRegistered<NotificationService>()) {
+      NotificationService.to.showPaymentSuccessNotification(
+        orderId: orderId,
+        amount: total.value,
+      );
+    }
 
     _clearCart();
 

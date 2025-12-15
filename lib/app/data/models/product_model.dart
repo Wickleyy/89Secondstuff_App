@@ -5,6 +5,7 @@ class Product {
   final String description;
   final String category;
   final String image;
+  final int stock;
 
   Product({
     required this.id,
@@ -13,7 +14,18 @@ class Product {
     required this.description,
     required this.category,
     required this.image,
+    this.stock = 0,
   });
+
+  bool get isOutOfStock => stock <= 0;
+  bool get isLowStock => stock > 0 && stock <= 5;
+  bool get isInStock => stock > 5;
+  
+  String get stockStatus {
+    if (isOutOfStock) return 'Habis';
+    if (isLowStock) return 'Stok Menipis';
+    return 'Tersedia';
+  }
 
   factory Product.fromJson(Map<String, dynamic> json) {
     bool isSupabase = json.containsKey('image_url');
@@ -32,6 +44,7 @@ class Product {
         description: json['description']?.toString() ?? '',
         category: categoryName,
         image: json['image_url']?.toString() ?? '',
+        stock: _parseInt(json['stock']),
       );
     } else {
       return Product(
@@ -41,6 +54,7 @@ class Product {
         description: json['description']?.toString() ?? '',
         category: json['category']?.toString() ?? 'Uncategorized',
         image: json['image']?.toString() ?? '',
+        stock: _parseInt(json['stock']),
       );
     }
   }
@@ -66,6 +80,7 @@ class Product {
       'description': description,
       'category': category,
       'image': image,
+      'stock': stock,
     };
   }
 }

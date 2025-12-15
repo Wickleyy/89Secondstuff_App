@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:_89_secondstufff/app/data/models/message_model.dart';
 import 'package:_89_secondstufff/app/data/models/profiles_model.dart';
 import 'package:_89_secondstufff/app/data/services/supabase_service.dart';
+import 'package:_89_secondstufff/app/data/services/notification_service.dart';
 
 class AdminChatDetailController extends GetxController {
   final TextEditingController textController = TextEditingController();
@@ -75,9 +76,11 @@ class AdminChatDetailController extends GetxController {
     }
   }
 
-  // --- PERBAIKAN: Gunakan logika filter manual (sama seperti chat_controller) ---
   void _subscribeToNewMessages() {
     _messageSubscription?.cancel();
+    
+    int previousMessageCount = messages.length;
+    
     _messageSubscription = _supabase.client
         .from('messages')
         .stream(primaryKey: ['id']).listen((data) {
@@ -97,12 +100,27 @@ class AdminChatDetailController extends GetxController {
       final newMessages = filtered.map((e) => Message.fromJson(e)).toList()
         ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
-      // Tampilkan pesan baru
+      // Check if there's a new message from user
+      if (newMessages.length > previousMessageCount) {
+        final latestMessage = newMessages.last;
+        if (latestMessage.senderId == targetUser.id) {
+          // Show notification for new message from user
+          if (Get.isRegistered<NotificationService>()) {
+            NotificationService.to.showChatNotification(
+              senderName: targetUser.fullName ?? 'User',
+              message: latestMessage.text,
+              senderId: latestMessage.senderId,
+              isAdmin: true,
+            );
+          }
+        }
+      }
+      
+      previousMessageCount = newMessages.length;
       messages.assignAll(newMessages);
       scrollToBottom();
     });
   }
-  // --- AKHIR PERBAIKAN ---
 
   void sendMessage() async {
     final text = textController.text.trim();
