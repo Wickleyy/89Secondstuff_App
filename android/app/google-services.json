@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "59949075852",
-    "project_id": "mdul-6-cd",
-    "storage_bucket": "mdul-6-cd.firebasestorage.app"
+    "project_number": "792248091068",
+    "project_id": "secondstuff-app-43851",
+    "storage_bucket": "secondstuff-app-43851.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:59949075852:android:d0e44d9fb1cdec3a1bdaa9",
+        "mobilesdk_app_id": "1:792248091068:android:76b060ce10d99d7250abb9",
         "android_client_info": {
           "package_name": "com.example.u_89_secondstufff"
         }
@@ -15,26 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCLIDfAbb38uhEWace6EH9x-Cu807YZ9A8"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:59949075852:android:514f76ef2e6014a01bdaa9",
-        "android_client_info": {
-          "package_name": "com.mobile.modul6"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyCLIDfAbb38uhEWace6EH9x-Cu807YZ9A8"
+          "current_key": "AIzaSyB3h4dKMTTfVadyVXJqik_zaQPFL0Hljrg"
         }
       ],
       "services": {

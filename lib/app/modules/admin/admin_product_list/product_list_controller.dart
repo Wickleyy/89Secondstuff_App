@@ -18,10 +18,14 @@ class AdminProductListController extends GetxController {
   void fetchProducts() async {
     try {
       isLoading.value = true;
+
+      // [PERBAIKAN] Select kolom secara eksplisit sesuai tabel DB
+      // Perhatikan: kolom di DB adalah 'image_url', bukan 'image'
       final response = await _supabase.client
           .from('products')
-          .select('*, categories(id, name)')
-          .order('id', ascending: false); // Produk terbaru di atas
+          .select(
+              'id, title, price, stock, description, image_url, category_id, categories(id, name)')
+          .order('id', ascending: false);
 
       final products =
           (response as List).map((data) => Product.fromJson(data)).toList();
@@ -29,6 +33,7 @@ class AdminProductListController extends GetxController {
       productList.assignAll(products);
     } catch (e) {
       Get.snackbar('Error', 'Gagal memuat produk: $e');
+      print("Product Error: $e"); // Cek debug console jika masih error
     } finally {
       isLoading.value = false;
     }
@@ -37,7 +42,6 @@ class AdminProductListController extends GetxController {
   void deleteProduct(int id) async {
     try {
       await _supabase.client.from('products').delete().eq('id', id);
-      // Refresh list setelah hapus
       fetchProducts();
       Get.snackbar('Sukses', 'Produk berhasil dihapus');
     } catch (e) {
@@ -46,12 +50,10 @@ class AdminProductListController extends GetxController {
   }
 
   void goToAddProduct() {
-    // Navigasi ke halaman form (mode tambah)
     Get.toNamed(AppRoutes.ADMIN_PRODUCT_FORM)?.then((_) => fetchProducts());
   }
 
   void goToEditProduct(Product product) {
-    // Navigasi ke halaman form (mode edit, kirim data produk)
     Get.toNamed(AppRoutes.ADMIN_PRODUCT_FORM, arguments: product)
         ?.then((_) => fetchProducts());
   }

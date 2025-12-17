@@ -7,8 +7,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:_89_secondstufff/app/routes/app_pages.dart';
 import 'package:_89_secondstufff/app/data/services/supabase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Background message handler - must be top-level function
+// Background handler (Wajib di luar class)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
@@ -28,357 +29,114 @@ class NotificationService extends GetxService {
   final RxList<NotificationItem> notifications = <NotificationItem>[].obs;
   final RxInt unreadCount = 0.obs;
 
-  // Channel configuration with default sound
-  static const String _channelId = 'high_importance_channel';
-  static const String _channelName = 'Notifikasi Penting';
-  static const String _channelDescription = 'Notifikasi untuk pesanan dan promo';
+  // KONFIGURASI CHANNEL V5 (Custom Sound)
+  static const String _channelId = 'channel_thrift_v5';
+  static const String _channelName = 'Notifikasi 89SecondStuff';
+  static const String _channelDescription = 'Promo, Stok, dan Transaksi';
+  static const String _soundFile = 'audio12'; // Nama file audio
 
+  RealtimeChannel? _promoChannel;
   Future<NotificationService> init() async {
     try {
-      // Request permissions
       await _requestPermissions();
-
-      // Initialize local notifications
       await _initializeLocalNotifications();
-
-      // Setup FCM handlers
       await _setupFCMHandlers();
-
-      // Get FCM token
       await _getFCMToken();
-
-      // Subscribe to topics for broadcast notifications
-      await _subscribeToTopics();
-
-      // Handle terminated state - check if app was opened from notification
+      await _subscribeToGlobalTopics();
       await _handleTerminatedState();
 
+      _listenToRealtimePromos();
+
       isInitialized.value = true;
-      debugPrint('[NotificationService] Service initialized successfully');
+      debugPrint('[NotificationService] Init SUCCESS (V5 + Public Methods) 🚀');
     } catch (e) {
       debugPrint('[NotificationService] Init error: $e');
     }
     return this;
   }
 
-  /// Subscribe to FCM topics for broadcast notifications
-  Future<void> _subscribeToTopics() async {
+  void _listenToRealtimePromos() {
     try {
-      // Subscribe to general topics
-      await _firebaseMessaging.subscribeToTopic('all_users');
-      await _firebaseMessaging.subscribeToTopic('promo');
-      debugPrint('[NotificationService] Subscribed to topics: all_users, promo');
-    } catch (e) {
-      debugPrint('[NotificationService] Error subscribing to topics: $e');
-    }
-  }
-
-  /// Handle app opened from terminated state via notification
-  Future<void> _handleTerminatedState() async {
-    // Check if app was opened from a terminated state via FCM notification
-    final initialMessage = await _firebaseMessaging.getInitialMessage();
-    
-    if (initialMessage != null) {
-      debugPrint('[NotificationService] App opened from TERMINATED state');
-      debugPrint('[NotificationService] Initial message data: ${initialMessage.data}');
-      
-      // Delay navigation to ensure app is fully initialized
-      Future.delayed(const Duration(milliseconds: 500), () {
-        navigateFromNotification(initialMessage.data);
-      });
-    }
-  }
-
-  Future<void> _requestPermissions() async {
-    final settings = await _firebaseMessaging.requestPermission(
-      alert: true,
-      announcement: false,
-      badge: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: false,
-      sound: true,
-    );
-
-    debugPrint('[NotificationService] Permission status: ${settings.authorizationStatus}');
-
-    // For Android 13+ request notification permission
-    if (Platform.isAndroid) {
-      await _localNotifications
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.requestNotificationsPermission();
-    }
-  }
-
-  Future<void> _initializeLocalNotifications() async {
-    const androidSettings = AndroidInitializationSettings('@mipmap/launcher_icon');
-
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
-
-    const initSettings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
-    );
-
-    await _localNotifications.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: _onLocalNotificationTapped,
-      onDidReceiveBackgroundNotificationResponse: _onBackgroundNotificationTapped,
-    );
-
-    // Create Android notification channel with custom sound
-    final androidPlugin = _localNotifications.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-
-    if (androidPlugin != null) {
-      await androidPlugin.createNotificationChannel(
-        const AndroidNotificationChannel(
-          _channelId,
-          _channelName,
-          description: _channelDescription,
-          importance: Importance.high,
-          playSound: true,
-          enableVibration: true,
-        ),
-      );
-      debugPrint('[NotificationService] Notification channel created');
-    }
-  }
-
-  Future<void> _setupFCMHandlers() async {
-    // Foreground messages
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-
-    // Background messages when app is opened
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
-
-    // Set background handler
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  }
-
-  Future<void> _getFCMToken() async {
-    try {
-      final token = await _firebaseMessaging.getToken();
-      fcmToken.value = token;
-      debugPrint('[NotificationService] FCM Token: $token');
-
-      // Save token to Supabase if user is logged in
-      if (token != null) {
-        await _saveFCMTokenToSupabase(token);
-      }
-
-      // Listen for token refresh
-      _firebaseMessaging.onTokenRefresh.listen((newToken) async {
-        fcmToken.value = newToken;
-        debugPrint('[NotificationService] FCM Token refreshed');
-        await _saveFCMTokenToSupabase(newToken);
-      });
-    } catch (e) {
-      debugPrint('[NotificationService] Error getting FCM token: $e');
-    }
-  }
-
-  Future<void> _saveFCMTokenToSupabase(String token) async {
-    try {
-      if (!Get.isRegistered<SupabaseService>()) return;
-      
-      final supabase = Get.find<SupabaseService>();
-      final userId = supabase.currentUser?.id;
-
-      if (userId == null) {
-        debugPrint('[NotificationService] No user logged in, skipping token save');
+      if (!Get.isRegistered<SupabaseService>()) {
+        debugPrint("[Realtime] Gagal: SupabaseService belum terdaftar.");
         return;
       }
 
-      await supabase.client.from('profiles').update({
-        'fcm_token': token,
-        'fcm_token_updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', userId);
+      final supabase = Get.find<SupabaseService>().client;
 
-      debugPrint('[NotificationService] FCM Token saved to Supabase');
-    } catch (e) {
-      debugPrint('[NotificationService] Error saving FCM token: $e');
-    }
-  }
+      debugPrint(
+          "[Realtime] Mencoba berlangganan ke tabel 'notification_history'...");
 
-  /// Update FCM token after user login
-  Future<void> updateTokenAfterLogin() async {
-    if (fcmToken.value != null) {
-      await _saveFCMTokenToSupabase(fcmToken.value!);
-    }
-  }
-
-  /// Remove FCM token on logout
-  Future<void> removeTokenOnLogout() async {
-    try {
-      if (!Get.isRegistered<SupabaseService>()) return;
-      
-      final supabase = Get.find<SupabaseService>();
-      final userId = supabase.currentUser?.id;
-
-      if (userId == null) return;
-
-      await supabase.client.from('profiles').update({
-        'fcm_token': null,
-      }).eq('id', userId);
-
-      debugPrint('[NotificationService] FCM Token removed from Supabase');
-    } catch (e) {
-      debugPrint('[NotificationService] Error removing FCM token: $e');
-    }
-  }
-
-  void _handleForegroundMessage(RemoteMessage message) {
-    debugPrint('[NotificationService] Foreground message received');
-    debugPrint('Title: ${message.notification?.title}');
-    debugPrint('Body: ${message.notification?.body}');
-
-    // Add to notification list
-    _addToNotificationList(
-      title: message.notification?.title ?? 'Notifikasi',
-      body: message.notification?.body ?? '',
-      type: message.data['type'] ?? 'general',
-      data: message.data,
-    );
-
-    // Show local notification with custom sound
-    _showLocalNotification(message);
-  }
-
-  void _handleMessageOpenedApp(RemoteMessage message) {
-    debugPrint('[NotificationService] Message opened app from background');
-    navigateFromNotification(message.data);
-  }
-
-  Future<void> _showLocalNotification(RemoteMessage message) async {
-    final notification = message.notification;
-    if (notification == null) return;
-
-    const androidDetails = AndroidNotificationDetails(
-      _channelId,
-      _channelName,
-      channelDescription: _channelDescription,
-      importance: Importance.high,
-      priority: Priority.high,
-      playSound: true,
-      enableVibration: true,
-      icon: '@mipmap/launcher_icon',
-    );
-
-    const iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-
-    const details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-
-    await _localNotifications.show(
-      message.hashCode,
-      notification.title,
-      notification.body,
-      details,
-      payload: jsonEncode(message.data),
-    );
-  }
-
-  void _onLocalNotificationTapped(NotificationResponse response) {
-    debugPrint('[NotificationService] Local notification tapped');
-    if (response.payload != null) {
-      try {
-        final data = jsonDecode(response.payload!) as Map<String, dynamic>;
-        navigateFromNotification(data);
-      } catch (e) {
-        debugPrint('[NotificationService] Error parsing payload: $e');
+      // Hapus subscription lama jika ada (biar gak double)
+      if (_promoChannel != null) {
+        supabase.removeChannel(_promoChannel!);
       }
-    }
-  }
 
-  @pragma('vm:entry-point')
-  static void _onBackgroundNotificationTapped(NotificationResponse response) {
-    debugPrint('[NotificationService] Background notification tapped');
-  }
+      _promoChannel = supabase.channel('public:notification_history');
 
-  void navigateFromNotification(Map<String, dynamic> data) {
-    debugPrint('[NotificationService] Navigating from notification: $data');
+      _promoChannel!
+          .onPostgresChanges(
+        event: PostgresChangeEvent.insert, // Hanya dengarkan data BARU (Insert)
+        schema: 'public',
+        table: 'notification_history',
+        callback: (payload) {
+          // KODE INI AKAN JALAN SAAT ADA DATA BARU DI TABEL
+          final data = payload.newRecord;
+          debugPrint("[Realtime] 🔥 DATA BARU DITERIMA: $data");
 
-    final type = data['type']?.toString() ?? '';
-
-    // Ensure GetX is ready before navigating
-    if (!Get.isRegistered<NotificationService>()) {
-      debugPrint('[NotificationService] GetX not ready, delaying navigation');
-      Future.delayed(const Duration(milliseconds: 300), () {
-        navigateFromNotification(data);
+          // Tampilkan Notifikasi Lokal
+          showPromoNotification(
+            title: data['title'] ?? 'Info Promo',
+            message: data['body'] ?? 'Cek aplikasi sekarang!',
+            promoCode: data['promo_code'],
+          );
+        },
+      )
+          .subscribe((status, error) {
+        debugPrint("[Realtime] Status Koneksi: $status");
+        if (error != null) debugPrint("[Realtime] Error: $error");
       });
-      return;
+    } catch (e) {
+      debugPrint("[Realtime] Exception: $e");
     }
+  }
+  // =========================================================
+  // 1. TOPIC SUBSCRIPTION (FITUR BARU)
+  // =========================================================
 
-    switch (type) {
-      case 'order_update':
-      case 'order_status':
-      case 'order_new':
-      case 'payment_success':
-        debugPrint('[NotificationService] Navigating to ORDER_HISTORY');
-        Get.toNamed(AppRoutes.ORDER_HISTORY);
-        break;
-      case 'new_product':
-      case 'promo':
-        debugPrint('[NotificationService] Navigating to MAIN_NAVIGATION (Home)');
-        Get.toNamed(AppRoutes.MAIN_NAVIGATION);
-        break;
-      case 'chat':
-      case 'new_message':
-        debugPrint('[NotificationService] Navigating to CHAT');
-        Get.toNamed(AppRoutes.CHAT);
-        break;
-      case 'admin_chat':
-        debugPrint('[NotificationService] Navigating to ADMIN_CHAT_LIST');
-        Get.toNamed(AppRoutes.ADMIN_CHAT_LIST);
-        break;
-      case 'low_stock':
-        debugPrint('[NotificationService] Navigating to ADMIN_PRODUCT_LIST');
-        Get.toNamed(AppRoutes.ADMIN_PRODUCT_LIST);
-        break;
-      default:
-        debugPrint('[NotificationService] Navigating to MAIN_NAVIGATION (default)');
-        Get.toNamed(AppRoutes.MAIN_NAVIGATION);
+  Future<void> _subscribeToGlobalTopics() async {
+    try {
+      await _firebaseMessaging.subscribeToTopic('new_drops');
+      await _firebaseMessaging.subscribeToTopic('promo');
+      await _firebaseMessaging.subscribeToTopic('all_users');
+      debugPrint('[Topic] Subscribed to global topics');
+    } catch (e) {
+      debugPrint('[Topic] Error subscribing: $e');
     }
   }
 
-  void _addToNotificationList({
-    required String title,
-    required String body,
-    required String type,
-    Map<String, dynamic>? data,
-  }) {
-    final notification = NotificationItem(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      title: title,
-      body: body,
-      type: type,
-      data: data,
-      createdAt: DateTime.now(),
-      isRead: false,
-    );
-
-    notifications.insert(0, notification);
-    unreadCount.value = notifications.where((n) => !n.isRead).length;
-
-    // Keep only last 50 notifications
-    if (notifications.length > 50) {
-      notifications.removeLast();
+  Future<void> subscribeToProduct(String productId) async {
+    try {
+      await _firebaseMessaging.subscribeToTopic('product_$productId');
+      debugPrint('[Topic] Subscribed to product_$productId');
+    } catch (e) {
+      debugPrint('[Topic] Error subscribing product: $e');
     }
   }
 
-  // ============== PUBLIC METHODS FOR SHOWING NOTIFICATIONS ==============
+  Future<void> unsubscribeFromProduct(String productId) async {
+    try {
+      await _firebaseMessaging.unsubscribeFromTopic('product_$productId');
+      debugPrint('[Topic] Unsubscribed from product_$productId');
+    } catch (e) {
+      debugPrint('[Topic] Error unsubscribing: $e');
+    }
+  }
+
+  // =========================================================
+  // 2. PUBLIC METHODS (INI YANG KEMARIN HILANG & BIKIN ERROR)
+  // =========================================================
+  // Method ini dipanggil oleh Controller lain (Chat, Order, dll)
 
   /// Show notification for new product
   Future<void> showNewProductNotification({
@@ -387,9 +145,9 @@ class NotificationService extends GetxService {
     int? productId,
   }) async {
     final priceFormatted = 'Rp ${price.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]}.',
-    )}';
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]}.',
+        )}';
 
     await showNotification(
       title: 'Produk Baru!',
@@ -421,9 +179,9 @@ class NotificationService extends GetxService {
     required double total,
   }) async {
     final totalFormatted = 'Rp ${total.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]}.',
-    )}';
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]}.',
+        )}';
 
     await showNotification(
       title: 'Pesanan Baru!',
@@ -477,9 +235,9 @@ class NotificationService extends GetxService {
     required double amount,
   }) async {
     final amountFormatted = 'Rp ${amount.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]}.',
-    )}';
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]}.',
+        )}';
 
     await showNotification(
       title: 'Pembayaran Berhasil!',
@@ -509,7 +267,7 @@ class NotificationService extends GetxService {
   }) async {
     String title;
     String body;
-    
+
     if (currentStock == 0) {
       title = 'Stok Habis!';
       body = 'Produk "$productName" sudah habis. Segera restock!';
@@ -526,7 +284,7 @@ class NotificationService extends GetxService {
     );
   }
 
-  /// Show notification for promo/discount (broadcast to all users)
+  /// Show notification for promo/discount
   Future<void> showPromoNotification({
     required String title,
     required String message,
@@ -540,14 +298,14 @@ class NotificationService extends GetxService {
     );
   }
 
-  /// Generic show notification method with custom sound
+  /// GENERIC SHOW NOTIFICATION (Dengan Custom Sound V5)
   Future<void> showNotification({
     required String title,
     required String body,
     String type = 'general',
     Map<String, dynamic>? data,
   }) async {
-    // Add to notification list
+    // Add to list
     _addToNotificationList(
       title: title,
       body: body,
@@ -559,9 +317,10 @@ class NotificationService extends GetxService {
       _channelId,
       _channelName,
       channelDescription: _channelDescription,
-      importance: Importance.high,
+      importance: Importance.max,
       priority: Priority.high,
       playSound: true,
+      sound: RawResourceAndroidNotificationSound(_soundFile), // audio12
       enableVibration: true,
       icon: '@mipmap/launcher_icon',
     );
@@ -581,7 +340,229 @@ class NotificationService extends GetxService {
     );
   }
 
-  // ============== NOTIFICATION LIST MANAGEMENT ==============
+  // =========================================================
+  // 3. NAVIGASI (ROUTING)
+  // =========================================================
+
+  void navigateFromNotification(Map<String, dynamic> data) {
+    debugPrint('[Navigasi] Payload Data: $data');
+    final type = data['type']?.toString() ?? '';
+
+    if (!Get.isRegistered<NotificationService>()) {
+      Future.delayed(const Duration(milliseconds: 500),
+          () => navigateFromNotification(data));
+      return;
+    }
+
+    switch (type) {
+      case 'winter_event':
+      case 'promo':
+        Get.toNamed(AppRoutes.MAIN_NAVIGATION);
+        Get.snackbar("❄️ Winter Sale!", "Diskon dimulai!",
+            backgroundColor: Colors.blue[100], icon: Icon(Icons.ac_unit));
+        break;
+      case 'new_drop':
+      case 'new_product':
+        Get.toNamed(AppRoutes.MAIN_NAVIGATION);
+        break;
+      case 'stock_alert':
+      case 'cart_alert':
+      case 'wishlist_alert':
+        Get.toNamed(AppRoutes.CART);
+        break;
+      case 'order_update':
+      case 'order_status':
+      case 'order_new':
+      case 'payment_success':
+        Get.toNamed(AppRoutes.ORDER_HISTORY);
+        break;
+      case 'chat':
+      case 'new_message':
+      case 'admin_chat':
+        Get.toNamed(AppRoutes.CHAT);
+        break;
+      case 'low_stock':
+        Get.toNamed(AppRoutes.ADMIN_PRODUCT_LIST);
+        break;
+      default:
+        Get.toNamed(AppRoutes.MAIN_NAVIGATION);
+    }
+  }
+
+  // =========================================================
+  // 4. SETUP METHODS (FCM & LOCAL)
+  // =========================================================
+
+  Future<void> _initializeLocalNotifications() async {
+    const androidSettings =
+        AndroidInitializationSettings('@mipmap/launcher_icon');
+    const iosSettings = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true);
+
+    await _localNotifications.initialize(
+      InitializationSettings(android: androidSettings, iOS: iosSettings),
+      onDidReceiveNotificationResponse: _onLocalNotificationTapped,
+    );
+
+    final androidPlugin =
+        _localNotifications.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    if (androidPlugin != null) {
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _channelId,
+          _channelName,
+          description: _channelDescription,
+          importance: Importance.max,
+          playSound: true,
+          sound: RawResourceAndroidNotificationSound(_soundFile),
+          enableVibration: true,
+        ),
+      );
+    }
+  }
+
+  Future<void> _requestPermissions() async {
+    final settings = await _firebaseMessaging.requestPermission(
+        alert: true, badge: true, sound: true);
+    if (Platform.isAndroid) {
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.requestNotificationsPermission();
+    }
+  }
+
+  Future<void> _setupFCMHandlers() async {
+    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  }
+
+  Future<void> _getFCMToken() async {
+    try {
+      final token = await _firebaseMessaging.getToken();
+      fcmToken.value = token;
+      debugPrint('[NotificationService] FCM Token: $token');
+      if (token != null) await _saveFCMTokenToSupabase(token);
+      _firebaseMessaging.onTokenRefresh.listen((newToken) {
+        fcmToken.value = newToken;
+        _saveFCMTokenToSupabase(newToken);
+      });
+    } catch (e) {
+      debugPrint('Error getting token: $e');
+    }
+  }
+
+  Future<void> _saveFCMTokenToSupabase(String token) async {
+    try {
+      if (!Get.isRegistered<SupabaseService>()) return;
+      final supabase = Get.find<SupabaseService>();
+      final userId = supabase.currentUser?.id;
+      if (userId != null) {
+        await supabase.client.from('profiles').update({
+          'fcm_token': token,
+          'fcm_token_updated_at': DateTime.now().toIso8601String(),
+        }).eq('id', userId);
+      }
+    } catch (e) {
+      debugPrint('Error saving token: $e');
+    }
+  }
+
+  // =========================================================
+  // 5. INTERNAL HANDLERS
+  // =========================================================
+
+  void _handleForegroundMessage(RemoteMessage message) {
+    debugPrint('[NotificationService] Foreground message received');
+    _addToNotificationList(
+      title: message.notification?.title ?? 'Notifikasi',
+      body: message.notification?.body ?? '',
+      type: message.data['type'] ?? 'general',
+      data: message.data,
+    );
+    _showLocalNotification(message);
+  }
+
+  void _handleMessageOpenedApp(RemoteMessage message) {
+    navigateFromNotification(message.data);
+  }
+
+  Future<void> _showLocalNotification(RemoteMessage message) async {
+    final notification = message.notification;
+    if (notification == null) return;
+
+    // Reuse the public showNotification logic implicitly by calling local plugin directly
+    // to avoid recursion loop, but strictly use the same CHANNEL ID
+    const androidDetails = AndroidNotificationDetails(
+      _channelId,
+      _channelName,
+      channelDescription: _channelDescription,
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      sound: RawResourceAndroidNotificationSound(_soundFile),
+      enableVibration: true,
+      icon: '@mipmap/launcher_icon',
+    );
+    const iosDetails =
+        DarwinNotificationDetails(presentAlert: true, presentSound: true);
+
+    await _localNotifications.show(
+      message.hashCode,
+      notification.title,
+      notification.body,
+      const NotificationDetails(android: androidDetails, iOS: iosDetails),
+      payload: jsonEncode(message.data),
+    );
+  }
+
+  void _onLocalNotificationTapped(NotificationResponse response) {
+    if (response.payload != null) {
+      try {
+        final data = jsonDecode(response.payload!) as Map<String, dynamic>;
+        navigateFromNotification(data);
+      } catch (e) {
+        debugPrint('Error parsing payload: $e');
+      }
+    }
+  }
+
+  Future<void> _handleTerminatedState() async {
+    final initialMessage = await _firebaseMessaging.getInitialMessage();
+    if (initialMessage != null) {
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        navigateFromNotification(initialMessage.data);
+      });
+    }
+  }
+
+  // =========================================================
+  // 6. LIST MANAGEMENT
+  // =========================================================
+
+  void _addToNotificationList(
+      {required String title,
+      required String body,
+      required String type,
+      Map<String, dynamic>? data}) {
+    final notification = NotificationItem(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: title,
+      body: body,
+      type: type,
+      data: data,
+      createdAt: DateTime.now(),
+      isRead: false,
+    );
+    notifications.insert(0, notification);
+    unreadCount.value = notifications.where((n) => !n.isRead).length;
+    if (notifications.length > 50) notifications.removeLast();
+  }
 
   void markAsRead(String notificationId) {
     final index = notifications.indexWhere((n) => n.id == notificationId);
@@ -607,10 +588,26 @@ class NotificationService extends GetxService {
     notifications.removeWhere((n) => n.id == notificationId);
     unreadCount.value = notifications.where((n) => !n.isRead).length;
   }
+
+  // Helpers for Auth
+  Future<void> updateTokenAfterLogin() async {
+    if (fcmToken.value != null) await _saveFCMTokenToSupabase(fcmToken.value!);
+    await _subscribeToGlobalTopics();
+  }
+
+  Future<void> removeTokenOnLogout() async {
+    if (!Get.isRegistered<SupabaseService>()) return;
+    final supabase = Get.find<SupabaseService>();
+    final userId = supabase.currentUser?.id;
+    if (userId != null) {
+      await supabase.client
+          .from('profiles')
+          .update({'fcm_token': null}).eq('id', userId);
+    }
+  }
 }
 
-// ============== NOTIFICATION ITEM MODEL ==============
-
+// MODEL CLASS (Tetap sama)
 class NotificationItem {
   final String id;
   final String title;
@@ -620,25 +617,23 @@ class NotificationItem {
   final DateTime createdAt;
   final bool isRead;
 
-  NotificationItem({
-    required this.id,
-    required this.title,
-    required this.body,
-    required this.type,
-    this.data,
-    required this.createdAt,
-    this.isRead = false,
-  });
+  NotificationItem(
+      {required this.id,
+      required this.title,
+      required this.body,
+      required this.type,
+      this.data,
+      required this.createdAt,
+      this.isRead = false});
 
-  NotificationItem copyWith({
-    String? id,
-    String? title,
-    String? body,
-    String? type,
-    Map<String, dynamic>? data,
-    DateTime? createdAt,
-    bool? isRead,
-  }) {
+  NotificationItem copyWith(
+      {String? id,
+      String? title,
+      String? body,
+      String? type,
+      Map<String, dynamic>? data,
+      DateTime? createdAt,
+      bool? isRead}) {
     return NotificationItem(
       id: id ?? this.id,
       title: title ?? this.title,
@@ -664,7 +659,10 @@ class NotificationItem {
       case 'payment_success':
         return Icons.payment;
       case 'promo':
+      case 'winter_event':
         return Icons.discount;
+      case 'stock_alert':
+        return Icons.warning;
       default:
         return Icons.notifications;
     }
@@ -684,7 +682,10 @@ class NotificationItem {
       case 'payment_success':
         return Colors.teal;
       case 'promo':
+      case 'winter_event':
         return Colors.purple;
+      case 'stock_alert':
+        return Colors.red;
       default:
         return Colors.grey;
     }

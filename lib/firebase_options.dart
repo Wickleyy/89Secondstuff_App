@@ -41,48 +41,48 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyB_DSt9MadensPUgl61MBcTN4ObxymXAUg',
-    appId: '1:59949075852:web:04a11daecc9bc7081bdaa9',
-    messagingSenderId: '59949075852',
-    projectId: 'mdul-6-cd',
-    authDomain: 'mdul-6-cd.firebaseapp.com',
-    storageBucket: 'mdul-6-cd.firebasestorage.app',
-    measurementId: 'G-56SYR32RSH',
+    apiKey: 'AIzaSyBJKUR7jp4t1aA2lEUgawbTfbvXZh7yzPk',
+    appId: '1:792248091068:web:67ef8fd7730fd7af50abb9',
+    messagingSenderId: '792248091068',
+    projectId: 'secondstuff-app-43851',
+    authDomain: 'secondstuff-app-43851.firebaseapp.com',
+    storageBucket: 'secondstuff-app-43851.firebasestorage.app',
+    measurementId: 'G-RBXW37FE88',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCLIDfAbb38uhEWace6EH9x-Cu807YZ9A8',
-    appId: '1:59949075852:android:d0e44d9fb1cdec3a1bdaa9',
-    messagingSenderId: '59949075852',
-    projectId: 'mdul-6-cd',
-    storageBucket: 'mdul-6-cd.firebasestorage.app',
+    apiKey: 'AIzaSyB3h4dKMTTfVadyVXJqik_zaQPFL0Hljrg',
+    appId: '1:792248091068:android:76b060ce10d99d7250abb9',
+    messagingSenderId: '792248091068',
+    projectId: 'secondstuff-app-43851',
+    storageBucket: 'secondstuff-app-43851.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyACdR77dakweXH4p_NPEfr5tv41_90hCKc',
-    appId: '1:59949075852:ios:0e8dff8bfd2646881bdaa9',
-    messagingSenderId: '59949075852',
-    projectId: 'mdul-6-cd',
-    storageBucket: 'mdul-6-cd.firebasestorage.app',
+    apiKey: 'AIzaSyCCHWEO0jM3AIrb3qDcJIzCQF_dTMLLF0o',
+    appId: '1:792248091068:ios:d932f7b9eba3dbbb50abb9',
+    messagingSenderId: '792248091068',
+    projectId: 'secondstuff-app-43851',
+    storageBucket: 'secondstuff-app-43851.firebasestorage.app',
     iosBundleId: 'com.example.89Secondstufff',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyACdR77dakweXH4p_NPEfr5tv41_90hCKc',
-    appId: '1:59949075852:ios:0e8dff8bfd2646881bdaa9',
-    messagingSenderId: '59949075852',
-    projectId: 'mdul-6-cd',
-    storageBucket: 'mdul-6-cd.firebasestorage.app',
+    apiKey: 'AIzaSyCCHWEO0jM3AIrb3qDcJIzCQF_dTMLLF0o',
+    appId: '1:792248091068:ios:d932f7b9eba3dbbb50abb9',
+    messagingSenderId: '792248091068',
+    projectId: 'secondstuff-app-43851',
+    storageBucket: 'secondstuff-app-43851.firebasestorage.app',
     iosBundleId: 'com.example.89Secondstufff',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyB_DSt9MadensPUgl61MBcTN4ObxymXAUg',
-    appId: '1:59949075852:web:04a11daecc9bc7081bdaa9',
-    messagingSenderId: '59949075852',
-    projectId: 'mdul-6-cd',
-    authDomain: 'mdul-6-cd.firebaseapp.com',
-    storageBucket: 'mdul-6-cd.firebasestorage.app',
-    measurementId: 'G-56SYR32RSH',
+    apiKey: 'AIzaSyBJKUR7jp4t1aA2lEUgawbTfbvXZh7yzPk',
+    appId: '1:792248091068:web:4c9e8c322ca3109c50abb9',
+    messagingSenderId: '792248091068',
+    projectId: 'secondstuff-app-43851',
+    authDomain: 'secondstuff-app-43851.firebaseapp.com',
+    storageBucket: 'secondstuff-app-43851.firebasestorage.app',
+    measurementId: 'G-R3PMKF1KC4',
   );
 }

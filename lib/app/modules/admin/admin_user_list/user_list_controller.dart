@@ -13,7 +13,8 @@ class AdminUserListController extends GetxController {
   var users = <Map<String, dynamic>>[].obs;
   var searchQuery = ''.obs;
 
-  final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+  final currencyFormat =
+      NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
   List<Map<String, dynamic>> get filteredUsers {
     if (searchQuery.value.isEmpty) return users;
@@ -35,13 +36,13 @@ class AdminUserListController extends GetxController {
     try {
       isLoading.value = true;
       debugPrint('[AdminUserList] Fetching users...');
-      
-      // Ambil semua user dengan role = 'user'
+
+      // [PERBAIKAN] Mengganti sorting dari 'created_at' (yang tidak ada) ke 'updated_at'
       final profilesResponse = await _supabase.client
           .from('profiles')
           .select('*')
           .eq('role', 'user')
-          .order('created_at', ascending: false);
+          .order('updated_at', ascending: false); // <-- Ganti ini
 
       debugPrint('[AdminUserList] Profiles response: $profilesResponse');
 
@@ -51,7 +52,7 @@ class AdminUserListController extends GetxController {
       // Untuk setiap user, ambil statistik order mereka
       for (var i = 0; i < profilesList.length; i++) {
         final userId = profilesList[i]['id'];
-        
+
         try {
           // Ambil orders user ini dengan order_items (tabel terpisah)
           final ordersResponse = await _supabase.client
@@ -60,7 +61,7 @@ class AdminUserListController extends GetxController {
               .eq('user_id', userId);
 
           final ordersList = List<Map<String, dynamic>>.from(ordersResponse);
-          
+
           // Hitung statistik
           int totalOrders = ordersList.length;
           int totalItems = 0;
@@ -80,7 +81,8 @@ class AdminUserListController extends GetxController {
           profilesList[i]['total_items'] = totalItems;
           profilesList[i]['total_spent'] = totalSpent;
         } catch (orderError) {
-          debugPrint('[AdminUserList] Error fetching orders for user $userId: $orderError');
+          debugPrint(
+              '[AdminUserList] Error fetching orders for user $userId: $orderError');
           // Set default values jika gagal fetch orders
           profilesList[i]['total_orders'] = 0;
           profilesList[i]['total_items'] = 0;
@@ -110,7 +112,7 @@ class AdminUserListController extends GetxController {
     final totalOrders = user['total_orders'] ?? 0;
     final totalItems = user['total_items'] ?? 0;
     final totalSpent = (user['total_spent'] ?? 0).toDouble();
-    
+
     Get.dialog(
       AlertDialog(
         backgroundColor: isDark ? AppTheme.deepPurpleLight : Colors.white,
@@ -119,11 +121,14 @@ class AdminUserListController extends GetxController {
           children: [
             CircleAvatar(
               radius: 24,
-              backgroundColor: isDark ? AppTheme.deepPurpleDark : AppTheme.lightPrimary,
-              backgroundImage: user['avatar_url'] != null && user['avatar_url'].toString().isNotEmpty
+              backgroundColor:
+                  isDark ? AppTheme.deepPurpleDark : AppTheme.lightPrimary,
+              backgroundImage: user['avatar_url'] != null &&
+                      user['avatar_url'].toString().isNotEmpty
                   ? NetworkImage(user['avatar_url'])
                   : null,
-              child: user['avatar_url'] == null || user['avatar_url'].toString().isEmpty
+              child: user['avatar_url'] == null ||
+                      user['avatar_url'].toString().isEmpty
                   ? Text(
                       (user['email'] ?? 'U')[0].toUpperCase(),
                       style: GoogleFonts.poppins(
@@ -168,35 +173,60 @@ class AdminUserListController extends GetxController {
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  gradient: isDark 
-                      ? LinearGradient(colors: [AppTheme.accentMustard.withValues(alpha: 0.2), AppTheme.accentRed.withValues(alpha: 0.1)])
-                      : LinearGradient(colors: [AppTheme.lightPrimary.withValues(alpha: 0.1), AppTheme.lightSupport.withValues(alpha: 0.1)]),
+                  gradient: isDark
+                      ? LinearGradient(colors: [
+                          AppTheme.accentMustard.withValues(alpha: 0.2),
+                          AppTheme.accentRed.withValues(alpha: 0.1)
+                        ])
+                      : LinearGradient(colors: [
+                          AppTheme.lightPrimary.withValues(alpha: 0.1),
+                          AppTheme.lightSupport.withValues(alpha: 0.1)
+                        ]),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
                   children: [
-                    Text('Statistik Belanja', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? Colors.white70 : Colors.grey[700])),
+                    Text('Statistik Belanja',
+                        style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white70 : Colors.grey[700])),
                     const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildStatItem(Icons.shopping_bag, '$totalOrders', 'Pesanan', isDark),
-                        _buildStatItem(Icons.inventory_2, '$totalItems', 'Barang', isDark),
+                        _buildStatItem(Icons.shopping_bag, '$totalOrders',
+                            'Pesanan', isDark),
+                        _buildStatItem(
+                            Icons.inventory_2, '$totalItems', 'Barang', isDark),
                       ],
                     ),
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isDark ? AppTheme.accentMustard.withValues(alpha: 0.2) : AppTheme.lightPrimary.withValues(alpha: 0.1),
+                        color: isDark
+                            ? AppTheme.accentMustard.withValues(alpha: 0.2)
+                            : AppTheme.lightPrimary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.payments, size: 16, color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary),
+                          Icon(Icons.payments,
+                              size: 16,
+                              color: isDark
+                                  ? AppTheme.accentMustard
+                                  : AppTheme.lightPrimary),
                           const SizedBox(width: 6),
-                          Text('Total: ${currencyFormat.format(totalSpent)}', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary)),
+                          Text('Total: ${currencyFormat.format(totalSpent)}',
+                              style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark
+                                      ? AppTheme.accentMustard
+                                      : AppTheme.lightPrimary)),
                         ],
                       ),
                     ),
@@ -204,9 +234,13 @@ class AdminUserListController extends GetxController {
                 ),
               ),
               // Info Profil
-              _buildDetailRow(Icons.phone, 'Telepon', user['phone'] ?? '-', isDark),
-              _buildDetailRow(Icons.calendar_today, 'Bergabung', _formatDate(user['created_at']), isDark),
-              _buildDetailRow(Icons.update, 'Update Terakhir', _formatDate(user['updated_at']), isDark),
+              _buildDetailRow(
+                  Icons.phone, 'Telepon', user['phone'] ?? '-', isDark),
+              // Karena 'created_at' tidak ada, kita ganti labelnya atau pakai '-' jika null
+              _buildDetailRow(Icons.calendar_today, 'Bergabung',
+                  _formatDate(user['created_at']), isDark),
+              _buildDetailRow(Icons.update, 'Update Terakhir',
+                  _formatDate(user['updated_at']), isDark),
               // Tombol Aksi
               const SizedBox(height: 12),
               // Tombol Chat User
@@ -239,8 +273,13 @@ class AdminUserListController extends GetxController {
                     icon: const Icon(Icons.receipt_long, size: 18),
                     label: const Text('LIHAT PESANAN'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary,
-                      side: BorderSide(color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary),
+                      foregroundColor: isDark
+                          ? AppTheme.accentMustard
+                          : AppTheme.lightPrimary,
+                      side: BorderSide(
+                          color: isDark
+                              ? AppTheme.accentMustard
+                              : AppTheme.lightPrimary),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
                   ),
@@ -252,7 +291,11 @@ class AdminUserListController extends GetxController {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text('TUTUP', style: TextStyle(color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary)),
+            child: Text('TUTUP',
+                style: TextStyle(
+                    color: isDark
+                        ? AppTheme.accentMustard
+                        : AppTheme.lightPrimary)),
           ),
           ElevatedButton.icon(
             onPressed: () {
@@ -276,17 +319,27 @@ class AdminUserListController extends GetxController {
     Get.toNamed(AppRoutes.ADMIN_CHAT_DETAIL, arguments: {
       'recipientId': user['id'],
       'recipientEmail': user['email'] ?? '',
-      'recipientName': user['full_name'] ?? user['email']?.split('@')[0] ?? 'User',
+      'recipientName':
+          user['full_name'] ?? user['email']?.split('@')[0] ?? 'User',
     });
   }
 
-  Widget _buildStatItem(IconData icon, String value, String label, bool isDark) {
+  Widget _buildStatItem(
+      IconData icon, String value, String label, bool isDark) {
     return Column(
       children: [
-        Icon(icon, size: 20, color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary),
+        Icon(icon,
+            size: 20,
+            color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary),
         const SizedBox(height: 4),
-        Text(value, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
-        Text(label, style: GoogleFonts.poppins(fontSize: 10, color: isDark ? Colors.white54 : Colors.grey)),
+        Text(value,
+            style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black87)),
+        Text(label,
+            style: GoogleFonts.poppins(
+                fontSize: 10, color: isDark ? Colors.white54 : Colors.grey)),
       ],
     );
   }
@@ -305,7 +358,8 @@ class AdminUserListController extends GetxController {
       // Ambil orders dengan order_items (tabel terpisah)
       final ordersResponse = await _supabase.client
           .from('orders')
-          .select('id, total_amount, status, created_at, order_items(product_title, product_image, quantity, price)')
+          .select(
+              'id, total_amount, status, created_at, order_items(product_title, product_image, quantity, price)')
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
@@ -316,17 +370,29 @@ class AdminUserListController extends GetxController {
       Get.dialog(
         AlertDialog(
           backgroundColor: isDark ? AppTheme.deepPurpleLight : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
             children: [
-              Icon(Icons.receipt_long, color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary),
+              Icon(Icons.receipt_long,
+                  color:
+                      isDark ? AppTheme.accentMustard : AppTheme.lightPrimary),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Pesanan ${user['full_name'] ?? user['email']}', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87), maxLines: 1, overflow: TextOverflow.ellipsis),
-                    Text('${orders.length} pesanan', style: GoogleFonts.poppins(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey)),
+                    Text('Pesanan ${user['full_name'] ?? user['email']}',
+                        style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: isDark ? Colors.white : Colors.black87),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                    Text('${orders.length} pesanan',
+                        style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: isDark ? Colors.white54 : Colors.grey)),
                   ],
                 ),
               ),
@@ -336,7 +402,10 @@ class AdminUserListController extends GetxController {
             width: double.maxFinite,
             height: 400,
             child: orders.isEmpty
-                ? Center(child: Text('Tidak ada pesanan', style: GoogleFonts.poppins(color: isDark ? Colors.white54 : Colors.grey)))
+                ? Center(
+                    child: Text('Tidak ada pesanan',
+                        style: GoogleFonts.poppins(
+                            color: isDark ? Colors.white54 : Colors.grey)))
                 : ListView.builder(
                     itemCount: orders.length,
                     itemBuilder: (context, index) {
@@ -345,14 +414,19 @@ class AdminUserListController extends GetxController {
                       final items = order['order_items'] as List? ?? [];
                       final status = order['status'] ?? 'Processing';
                       final statusColor = _getStatusColor(status);
-                      
+
                       return Container(
                         margin: const EdgeInsets.only(bottom: 10),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isDark ? AppTheme.deepPurpleDark.withValues(alpha: 0.5) : Colors.grey[50],
+                          color: isDark
+                              ? AppTheme.deepPurpleDark.withValues(alpha: 0.5)
+                              : Colors.grey[50],
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: isDark ? AppTheme.glowPurple.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.2)),
+                          border: Border.all(
+                              color: isDark
+                                  ? AppTheme.glowPurple.withValues(alpha: 0.2)
+                                  : Colors.grey.withValues(alpha: 0.2)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -361,38 +435,92 @@ class AdminUserListController extends GetxController {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('#${order['id'].toString().substring(0, 8)}', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87)),
+                                Text(
+                                    '#${order['id'].toString().substring(0, 8)}',
+                                    style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.black87)),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
-                                  child: Text(status.toUpperCase(), style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.w600, color: statusColor)),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                      color: statusColor.withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(8)),
+                                  child: Text(status.toUpperCase(),
+                                      style: GoogleFonts.poppins(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w600,
+                                          color: statusColor)),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 6),
                             // Items (dari tabel order_items)
                             ...items.take(3).map((item) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 2),
-                              child: Row(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(6),
-                                    child: Image.network(item['product_image'] ?? '', width: 30, height: 30, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(width: 30, height: 30, color: Colors.grey[300], child: const Icon(Icons.image, size: 16))),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 2),
+                                  child: Row(
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(6),
+                                        child: Image.network(
+                                            item['product_image'] ?? '',
+                                            width: 30,
+                                            height: 30,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) =>
+                                                Container(
+                                                    width: 30,
+                                                    height: 30,
+                                                    color: Colors.grey[300],
+                                                    child: const Icon(
+                                                        Icons.image,
+                                                        size: 16))),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                          child: Text(
+                                              '${item['product_title'] ?? 'Item'} x${item['quantity'] ?? 1}',
+                                              style: GoogleFonts.poppins(
+                                                  fontSize: 11,
+                                                  color: isDark
+                                                      ? Colors.white70
+                                                      : Colors.grey[700]),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis)),
+                                    ],
                                   ),
-                                  const SizedBox(width: 8),
-                                  Expanded(child: Text('${item['product_title'] ?? 'Item'} x${item['quantity'] ?? 1}', style: GoogleFonts.poppins(fontSize: 11, color: isDark ? Colors.white70 : Colors.grey[700]), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                                ],
-                              ),
-                            )),
+                                )),
                             if (items.length > 3)
-                              Text('+${items.length - 3} item lainnya', style: GoogleFonts.poppins(fontSize: 10, color: isDark ? Colors.white38 : Colors.grey, fontStyle: FontStyle.italic)),
+                              Text('+${items.length - 3} item lainnya',
+                                  style: GoogleFonts.poppins(
+                                      fontSize: 10,
+                                      color:
+                                          isDark ? Colors.white38 : Colors.grey,
+                                      fontStyle: FontStyle.italic)),
                             const SizedBox(height: 6),
                             // Total
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(_formatDate(order['created_at']), style: GoogleFonts.poppins(fontSize: 10, color: isDark ? Colors.white38 : Colors.grey)),
-                                Text(currencyFormat.format(order['total_amount'] ?? 0), style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary)),
+                                Text(_formatDate(order['created_at']),
+                                    style: GoogleFonts.poppins(
+                                        fontSize: 10,
+                                        color: isDark
+                                            ? Colors.white38
+                                            : Colors.grey)),
+                                Text(
+                                    currencyFormat
+                                        .format(order['total_amount'] ?? 0),
+                                    style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark
+                                            ? AppTheme.accentMustard
+                                            : AppTheme.lightPrimary)),
                               ],
                             ),
                           ],
@@ -402,13 +530,22 @@ class AdminUserListController extends GetxController {
                   ),
           ),
           actions: [
-            TextButton(onPressed: () => Get.back(), child: Text('TUTUP', style: TextStyle(color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary))),
+            TextButton(
+                onPressed: () => Get.back(),
+                child: Text('TUTUP',
+                    style: TextStyle(
+                        color: isDark
+                            ? AppTheme.accentMustard
+                            : AppTheme.lightPrimary))),
           ],
         ),
       );
     } catch (e) {
       Get.back();
-      Get.snackbar('Error', 'Gagal memuat pesanan: $e', snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar('Error', 'Gagal memuat pesanan: $e',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
     }
   }
 
@@ -430,19 +567,28 @@ class AdminUserListController extends GetxController {
     }
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value, bool isDark) {
+  Widget _buildDetailRow(
+      IconData icon, String label, String value, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary),
+          Icon(icon,
+              size: 20,
+              color: isDark ? AppTheme.accentMustard : AppTheme.lightPrimary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: GoogleFonts.poppins(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey)),
-                Text(value, style: GoogleFonts.poppins(fontSize: 13, color: isDark ? Colors.white : Colors.black87)),
+                Text(label,
+                    style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: isDark ? Colors.white54 : Colors.grey)),
+                Text(value,
+                    style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: isDark ? Colors.white : Colors.black87)),
               ],
             ),
           ),
@@ -463,33 +609,40 @@ class AdminUserListController extends GetxController {
 
   void _confirmDeleteUser(Map<String, dynamic> user) {
     final isDark = Get.isDarkMode;
-    
+
     Get.dialog(
       AlertDialog(
         backgroundColor: isDark ? AppTheme.deepPurpleLight : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: AppTheme.accentRed, size: 28),
+            Icon(Icons.warning_amber_rounded,
+                color: AppTheme.accentRed, size: 28),
             const SizedBox(width: 10),
-            Text('Hapus User', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
+            Text('Hapus User',
+                style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87)),
           ],
         ),
         content: Text(
           'Yakin ingin menghapus akun "${user['email']}"?\n\nTindakan ini tidak dapat dibatalkan dan akan menghapus semua data user termasuk pesanan dan chat.',
-          style: GoogleFonts.poppins(color: isDark ? Colors.white70 : Colors.grey[700]),
+          style: GoogleFonts.poppins(
+              color: isDark ? Colors.white70 : Colors.grey[700]),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text('BATAL', style: TextStyle(color: isDark ? Colors.white70 : Colors.grey)),
+            child: Text('BATAL',
+                style: TextStyle(color: isDark ? Colors.white70 : Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () {
               Get.back();
               deleteUser(user['id']);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentRed),
+            style:
+                ElevatedButton.styleFrom(backgroundColor: AppTheme.accentRed),
             child: const Text('HAPUS', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -506,7 +659,10 @@ class AdminUserListController extends GetxController {
 
       // Delete user's messages
       await _supabase.client.from('messages').delete().eq('sender_id', userId);
-      await _supabase.client.from('messages').delete().eq('receiver_id', userId);
+      await _supabase.client
+          .from('messages')
+          .delete()
+          .eq('receiver_id', userId);
 
       // Delete user's orders
       await _supabase.client.from('orders').delete().eq('user_id', userId);
