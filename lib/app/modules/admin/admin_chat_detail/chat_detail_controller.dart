@@ -35,8 +35,7 @@ class AdminChatDetailController extends GetxController {
     _adminId = _supabase.currentUser!.id;
     _supabase.joinPresenceChannel();
     _initializeChat();
-    
-    // Listen to online users changes
+
     ever(_supabase.onlineUsers, (_) {
       isUserOnline.value = _supabase.isUserOnline(targetUser.id);
     });
@@ -47,7 +46,7 @@ class AdminChatDetailController extends GetxController {
     try {
       isLoading.value = true;
       await _fetchInitialMessages();
-      _subscribeToNewMessages(); // Langganan ke pesan baru
+      _subscribeToNewMessages();
     } catch (e) {
       Get.snackbar('Error', 'Gagal memulai chat: $e');
     } finally {
@@ -62,7 +61,6 @@ class AdminChatDetailController extends GetxController {
           .from('messages')
           .select()
           .or(
-            // Pesan DARI admin KE user, ATAU DARI user KE admin
             'and(sender_id.eq.$_adminId,receiver_id.eq.${targetUser.id}),'
             'and(sender_id.eq.${targetUser.id},receiver_id.eq.$_adminId)',
           )
@@ -78,33 +76,28 @@ class AdminChatDetailController extends GetxController {
 
   void _subscribeToNewMessages() {
     _messageSubscription?.cancel();
-    
+
     int previousMessageCount = messages.length;
-    
+
     _messageSubscription = _supabase.client
         .from('messages')
         .stream(primaryKey: ['id']).listen((data) {
-      // Filter manual
       final filtered = data.where((row) {
         final sender = row['sender_id'];
         final receiver = row['receiver_id'];
 
-        // Cek apakah pesan ini adalah bagian dari percakapan saat ini
         final isUserToAdmin = sender == targetUser.id && receiver == _adminId;
         final isAdminToUser = sender == _adminId && receiver == targetUser.id;
 
         return isUserToAdmin || isAdminToUser;
       }).toList();
 
-      // Buat list pesan baru dari data yang sudah difilter
       final newMessages = filtered.map((e) => Message.fromJson(e)).toList()
         ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
-      // Check if there's a new message from user
       if (newMessages.length > previousMessageCount) {
         final latestMessage = newMessages.last;
         if (latestMessage.senderId == targetUser.id) {
-          // Show notification for new message from user
           if (Get.isRegistered<NotificationService>()) {
             NotificationService.to.showChatNotification(
               senderName: targetUser.fullName ?? 'User',
@@ -115,7 +108,7 @@ class AdminChatDetailController extends GetxController {
           }
         }
       }
-      
+
       previousMessageCount = newMessages.length;
       messages.assignAll(newMessages);
       scrollToBottom();
@@ -128,8 +121,8 @@ class AdminChatDetailController extends GetxController {
 
     final message = Message(
       id: 0,
-      senderId: _adminId, // Admin mengirim
-      receiverId: targetUser.id, // Ke user
+      senderId: _adminId,
+      receiverId: targetUser.id,
       text: text,
       createdAt: DateTime.now(),
     );
@@ -139,6 +132,27 @@ class AdminChatDetailController extends GetxController {
 
       textController.clear();
       scrollToBottom();
+
+      final userProfile = await _supabase.client
+          .from('profiles')
+          .select('fcm_token')
+          .eq('id', targetUser.id)
+          .maybeSingle();
+
+      final String? targetToken = userProfile?['fcm_token'];
+
+      if (targetToken != null && targetToken.isNotEmpty) {
+        if (Get.isRegistered<NotificationService>()) {
+          await NotificationService.to.sendTargetedChatNotification(
+            targetFcmToken: targetToken,
+            senderName: "Admin 89Secondstuff",
+            message: text,
+            senderId: _adminId,
+          );
+        }
+      } else {
+        print("User ini tidak punya token FCM (Mungkin belum login)");
+      }
     } catch (e) {
       Get.snackbar('Error', 'Gagal mengirim pesan: $e');
     }

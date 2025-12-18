@@ -39,7 +39,6 @@ class OrderItem extends HiveObject {
     required this.subtotal,
   });
 
-  // Factory untuk data dari tabel order_items (relasi)
   factory OrderItem.fromJson(Map<String, dynamic> json) {
     return OrderItem(
       id: _parseInt(json['id']),
@@ -53,7 +52,6 @@ class OrderItem extends HiveObject {
     );
   }
 
-  // Factory untuk data dari jsonb items di tabel orders
   factory OrderItem.fromJsonb(Map<String, dynamic> json) {
     final qty = _parseInt(json['quantity'], defaultValue: 1);
     final prc = _parseDouble(json['price']);
@@ -61,15 +59,19 @@ class OrderItem extends HiveObject {
       id: _parseInt(json['id']),
       orderId: '',
       productId: _parseInt(json['product_id'] ?? json['productId']),
-      productTitle: json['product_title']?.toString() ?? json['title']?.toString() ?? 'Produk',
-      productImage: json['product_image']?.toString() ?? json['image']?.toString() ?? '',
+      productTitle: json['product_title']?.toString() ??
+          json['title']?.toString() ??
+          'Produk',
+      productImage:
+          json['product_image']?.toString() ?? json['image']?.toString() ?? '',
       price: prc,
       quantity: qty,
-      subtotal: _parseDouble(json['subtotal']) > 0 ? _parseDouble(json['subtotal']) : prc * qty,
+      subtotal: _parseDouble(json['subtotal']) > 0
+          ? _parseDouble(json['subtotal'])
+          : prc * qty,
     );
   }
 
-  // Factory untuk item kosong
   factory OrderItem.empty() {
     return OrderItem(
       id: 0,
@@ -108,7 +110,6 @@ class OrderItem extends HiveObject {
     };
   }
 
-  // Untuk disimpan ke jsonb
   Map<String, dynamic> toJsonb() {
     return {
       'product_id': productId,
@@ -160,15 +161,13 @@ class Order extends HiveObject {
 
   factory Order.fromJson(Map<String, dynamic> json) {
     List<OrderItem>? orderItems;
-    
-    // Handle order_items dari relasi
+
     if (json['order_items'] != null && json['order_items'] is List) {
       orderItems = (json['order_items'] as List)
           .map((item) => OrderItem.fromJson(item as Map<String, dynamic>))
           .toList();
     }
-    
-    // Handle items dari jsonb (format lama)
+
     if (orderItems == null && json['items'] != null) {
       if (json['items'] is List) {
         orderItems = (json['items'] as List).map((item) {
@@ -182,7 +181,7 @@ class Order extends HiveObject {
 
     return Order(
       id: json['id']?.toString() ?? '',
-      oderId: json['id']?.toString() ?? '', // Gunakan id sebagai order id
+      oderId: json['id']?.toString() ?? '',
       userId: json['user_id']?.toString() ?? '',
       shippingAddressId: _parseInt(json['shipping_address_id']),
       totalAmount: _parseDouble(json['total_amount']),
@@ -247,9 +246,10 @@ class Order extends HiveObject {
   bool get isCancelled => status.toLowerCase() == 'cancelled';
   bool get isDelivered => status.toLowerCase() == 'delivered';
   bool get isShipped => status.toLowerCase() == 'shipped';
-  
+
   double get total => totalAmount;
   String get orderId => oderId;
-  
-  int get totalItems => items?.fold(0, (sum, item) => sum! + item.quantity) ?? 0;
+
+  int get totalItems =>
+      items?.fold(0, (sum, item) => sum! + item.quantity) ?? 0;
 }

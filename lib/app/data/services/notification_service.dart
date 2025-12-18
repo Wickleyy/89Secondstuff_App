@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -9,7 +10,6 @@ import 'package:_89_secondstufff/app/routes/app_pages.dart';
 import 'package:_89_secondstufff/app/data/services/supabase_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Background handler (Wajib di luar class)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
@@ -23,17 +23,15 @@ class NotificationService extends GetxService {
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
-  // Observable states
   final Rx<String?> fcmToken = Rx<String?>(null);
   final RxBool isInitialized = false.obs;
   final RxList<NotificationItem> notifications = <NotificationItem>[].obs;
   final RxInt unreadCount = 0.obs;
 
-  // KONFIGURASI CHANNEL V5 (Custom Sound)
   static const String _channelId = 'channel_thrift_v5';
   static const String _channelName = 'Notifikasi 89SecondStuff';
   static const String _channelDescription = 'Promo, Stok, dan Transaksi';
-  static const String _soundFile = 'audio12'; // Nama file audio
+  static const String _soundFile = 'audio12';
 
   RealtimeChannel? _promoChannel;
   Future<NotificationService> init() async {
@@ -67,7 +65,6 @@ class NotificationService extends GetxService {
       debugPrint(
           "[Realtime] Mencoba berlangganan ke tabel 'notification_history'...");
 
-      // Hapus subscription lama jika ada (biar gak double)
       if (_promoChannel != null) {
         supabase.removeChannel(_promoChannel!);
       }
@@ -76,15 +73,13 @@ class NotificationService extends GetxService {
 
       _promoChannel!
           .onPostgresChanges(
-        event: PostgresChangeEvent.insert, // Hanya dengarkan data BARU (Insert)
+        event: PostgresChangeEvent.insert,
         schema: 'public',
         table: 'notification_history',
         callback: (payload) {
-          // KODE INI AKAN JALAN SAAT ADA DATA BARU DI TABEL
           final data = payload.newRecord;
           debugPrint("[Realtime] 🔥 DATA BARU DITERIMA: $data");
 
-          // Tampilkan Notifikasi Lokal
           showPromoNotification(
             title: data['title'] ?? 'Info Promo',
             message: data['body'] ?? 'Cek aplikasi sekarang!',
@@ -100,9 +95,6 @@ class NotificationService extends GetxService {
       debugPrint("[Realtime] Exception: $e");
     }
   }
-  // =========================================================
-  // 1. TOPIC SUBSCRIPTION (FITUR BARU)
-  // =========================================================
 
   Future<void> _subscribeToGlobalTopics() async {
     try {
@@ -133,12 +125,6 @@ class NotificationService extends GetxService {
     }
   }
 
-  // =========================================================
-  // 2. PUBLIC METHODS (INI YANG KEMARIN HILANG & BIKIN ERROR)
-  // =========================================================
-  // Method ini dipanggil oleh Controller lain (Chat, Order, dll)
-
-  /// Show notification for new product
   Future<void> showNewProductNotification({
     required String productName,
     required double price,
@@ -157,7 +143,6 @@ class NotificationService extends GetxService {
     );
   }
 
-  /// Show notification for new chat message
   Future<void> showChatNotification({
     required String senderName,
     required String message,
@@ -172,7 +157,6 @@ class NotificationService extends GetxService {
     );
   }
 
-  /// Show notification for new order (for admin)
   Future<void> showNewOrderNotification({
     required String orderId,
     required String customerName,
@@ -191,7 +175,6 @@ class NotificationService extends GetxService {
     );
   }
 
-  /// Show notification for order status update (for customer)
   Future<void> showOrderStatusNotification({
     required String orderId,
     required String status,
@@ -229,7 +212,6 @@ class NotificationService extends GetxService {
     );
   }
 
-  /// Show notification for payment success
   Future<void> showPaymentSuccessNotification({
     required String orderId,
     required double amount,
@@ -247,7 +229,6 @@ class NotificationService extends GetxService {
     );
   }
 
-  /// Show notification for checkout success
   Future<void> showCheckoutSuccessNotification({
     required String orderId,
     required int itemCount,
@@ -260,7 +241,6 @@ class NotificationService extends GetxService {
     );
   }
 
-  /// Show notification for low stock (admin only)
   Future<void> showLowStockNotification({
     required String productName,
     required int currentStock,
@@ -284,7 +264,6 @@ class NotificationService extends GetxService {
     );
   }
 
-  /// Show notification for promo/discount
   Future<void> showPromoNotification({
     required String title,
     required String message,
@@ -298,14 +277,12 @@ class NotificationService extends GetxService {
     );
   }
 
-  /// GENERIC SHOW NOTIFICATION (Dengan Custom Sound V5)
   Future<void> showNotification({
     required String title,
     required String body,
     String type = 'general',
     Map<String, dynamic>? data,
   }) async {
-    // Add to list
     _addToNotificationList(
       title: title,
       body: body,
@@ -320,7 +297,7 @@ class NotificationService extends GetxService {
       importance: Importance.max,
       priority: Priority.high,
       playSound: true,
-      sound: RawResourceAndroidNotificationSound(_soundFile), // audio12
+      sound: RawResourceAndroidNotificationSound(_soundFile),
       enableVibration: true,
       icon: '@mipmap/launcher_icon',
     );
@@ -339,10 +316,6 @@ class NotificationService extends GetxService {
       payload: jsonEncode({...?data, 'type': type}),
     );
   }
-
-  // =========================================================
-  // 3. NAVIGASI (ROUTING)
-  // =========================================================
 
   void navigateFromNotification(Map<String, dynamic> data) {
     debugPrint('[Navigasi] Payload Data: $data');
@@ -388,10 +361,6 @@ class NotificationService extends GetxService {
         Get.toNamed(AppRoutes.MAIN_NAVIGATION);
     }
   }
-
-  // =========================================================
-  // 4. SETUP METHODS (FCM & LOCAL)
-  // =========================================================
 
   Future<void> _initializeLocalNotifications() async {
     const androidSettings =
@@ -473,10 +442,6 @@ class NotificationService extends GetxService {
     }
   }
 
-  // =========================================================
-  // 5. INTERNAL HANDLERS
-  // =========================================================
-
   void _handleForegroundMessage(RemoteMessage message) {
     debugPrint('[NotificationService] Foreground message received');
     _addToNotificationList(
@@ -496,8 +461,6 @@ class NotificationService extends GetxService {
     final notification = message.notification;
     if (notification == null) return;
 
-    // Reuse the public showNotification logic implicitly by calling local plugin directly
-    // to avoid recursion loop, but strictly use the same CHANNEL ID
     const androidDetails = AndroidNotificationDetails(
       _channelId,
       _channelName,
@@ -540,10 +503,6 @@ class NotificationService extends GetxService {
       });
     }
   }
-
-  // =========================================================
-  // 6. LIST MANAGEMENT
-  // =========================================================
 
   void _addToNotificationList(
       {required String title,
@@ -589,7 +548,6 @@ class NotificationService extends GetxService {
     unreadCount.value = notifications.where((n) => !n.isRead).length;
   }
 
-  // Helpers for Auth
   Future<void> updateTokenAfterLogin() async {
     if (fcmToken.value != null) await _saveFCMTokenToSupabase(fcmToken.value!);
     await _subscribeToGlobalTopics();
@@ -605,9 +563,63 @@ class NotificationService extends GetxService {
           .update({'fcm_token': null}).eq('id', userId);
     }
   }
+
+  // ==================== FUNGSI KIRIM CHAT (ADMIN -> USER) ====================
+
+  /// Mengirim notifikasi chat ke SATU user spesifik via FCM Legacy API
+  Future<bool> sendTargetedChatNotification({
+    required String targetFcmToken, // Token HP User (ambil dari table profiles)
+    required String senderName, // Nama Admin
+    required String message, // Isi Chat
+    required String senderId, // ID Admin (untuk navigasi)
+  }) async {
+    try {
+      // ⚠️ GANTI DENGAN SERVER KEY DARI FIREBASE CONSOLE -> PROJECT SETTINGS -> CLOUD MESSAGING
+      // Pastikan "Cloud Messaging API (Legacy)" sudah di-enable di Google Cloud Console
+      const String serverKey = 'AAAA...PASTE_SERVER_KEY_DISINI...';
+
+      final Uri url = Uri.parse('https://fcm.googleapis.com/fcm/send');
+
+      final Map<String, dynamic> body = {
+        "to": targetFcmToken, // Target token spesifik
+        "priority": "high",
+        "notification": {
+          "title": senderName,
+          "body": message,
+          "sound": "default", // Atau gunakan _soundFile jika ingin custom sound
+        },
+        // Payload DATA ini penting agar navigateFromNotification bekerja
+        "data": {
+          "type": "chat",
+          "sender_id": senderId,
+          "click_action": "FLUTTER_NOTIFICATION_CLICK"
+        }
+      };
+
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "key=$serverKey",
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('[FCM] Notifikasi Chat berhasil dikirim ke $targetFcmToken');
+        return true;
+      } else {
+        debugPrint(
+            '[FCM] Gagal kirim: ${response.statusCode} - ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('[FCM] Error sending chat: $e');
+      return false;
+    }
+  }
 }
 
-// MODEL CLASS (Tetap sama)
 class NotificationItem {
   final String id;
   final String title;

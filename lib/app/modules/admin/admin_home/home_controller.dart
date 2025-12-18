@@ -4,14 +4,11 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:_89_secondstufff/app/data/services/supabase_service.dart';
-import 'package:_89_secondstufff/app/data/services/notification_service.dart'; // Pastikan import ini ada
 import 'package:_89_secondstufff/app/routes/app_pages.dart';
-import 'package:_89_secondstufff/app/themes/app_theme.dart';
 
 class AdminHomeController extends GetxController {
   final SupabaseService _supabase = Get.find();
 
-  // Statistics Variables
   var totalProducts = 0.obs;
   var totalOrders = 0.obs;
   var activeChats = 0.obs;
@@ -19,7 +16,6 @@ class AdminHomeController extends GetxController {
   var totalRevenue = 0.0.obs;
   var isLoading = true.obs;
 
-  // Admin Info
   var adminEmail = ''.obs;
   var adminName = 'Admin'.obs;
   var adminAvatarUrl = ''.obs;
@@ -40,17 +36,14 @@ class AdminHomeController extends GetxController {
     super.onClose();
   }
 
-  // --- 1. LOAD STATISTICS (PERBAIKAN PRODUK 0) ---
   Future<void> loadStatistics() async {
     try {
       isLoading.value = true;
 
-      // FIX: Hapus filter 'is_active' karena kolomnya tidak ada di database kamu
       final productsResponse =
           await _supabase.client.from('products').select('id');
       totalProducts.value = (productsResponse as List).length;
 
-      // Hitung Orders & Revenue
       final ordersResponse = await _supabase.client
           .from('orders')
           .select('id, total_amount, status');
@@ -63,14 +56,12 @@ class AdminHomeController extends GetxController {
       totalRevenue.value = paidOrders.fold(
           0.0, (sum, item) => sum + (item['total_amount'] ?? 0).toDouble());
 
-      // Hitung Users (Role User)
       final usersResponse = await _supabase.client
           .from('profiles')
           .select('id')
           .eq('role', 'user');
       totalUsers.value = (usersResponse as List).length;
 
-      // Hitung Active Chats
       final chatsResponse =
           await _supabase.client.from('messages').select('sender_id');
 
@@ -84,15 +75,12 @@ class AdminHomeController extends GetxController {
     }
   }
 
-  // --- 2. FUNGSI YANG HILANG (PERBAIKAN ERROR VIEW) ---
-  // Fungsi ini dipanggil dari home_view.dart, jadi WAJIB ADA
   void sendPromoNotification({
     required String title,
     required String message,
     String? promoCode,
   }) async {
     try {
-      // 1. Simpan ke Database (Ini yang akan mentrigger notif di user lain)
       await _supabase.client.from('notification_history').insert({
         'title': title,
         'body': message,
@@ -100,7 +88,6 @@ class AdminHomeController extends GetxController {
         'created_at': DateTime.now().toIso8601String(),
       });
 
-      // 2. Feedback Sukses ke Admin
       Get.snackbar(
         'Terkirim ke Server!',
         'Promo sedang dibroadcast ke seluruh user...',
@@ -120,19 +107,17 @@ class AdminHomeController extends GetxController {
     }
   }
 
-  // --- 3. SHOW PRODUCTS DIALOG (PERBAIKAN GAMBAR ERROR) ---
   void showProductsDialog() async {
     Get.dialog(const Center(child: CircularProgressIndicator()),
         barrierDismissible: false);
 
     try {
-      // FIX: Ganti 'image' menjadi 'image_url' sesuai database kamu
       final response = await _supabase.client
           .from('products')
           .select('id, title, price, image_url, stock')
           .order('id', ascending: false);
 
-      Get.back(); // Tutup loading
+      Get.back();
 
       final products = List<Map<String, dynamic>>.from(response);
       final currencyFormat = NumberFormat.currency(
@@ -153,7 +138,6 @@ class AdminHomeController extends GetxController {
                     itemCount: products.length,
                     itemBuilder: (context, index) {
                       final p = products[index];
-                      // FIX: Ambil dari 'image_url'
                       final imgUrl = p['image_url'];
 
                       return ListTile(
@@ -208,14 +192,11 @@ class AdminHomeController extends GetxController {
     }
   }
 
-  // --- NAVIGATION & UTILS ---
-
   void _setupRealtimeSubscriptions() {
-    // Listener sederhana untuk update realtime
     _productsSubscription = _supabase.client
         .from('products')
         .stream(primaryKey: ['id']).listen((data) {
-      loadStatistics(); // Reload stats jika ada perubahan
+      loadStatistics();
     });
   }
 

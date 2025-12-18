@@ -1,5 +1,5 @@
 class Message {
-  final int id; // ID dari tabel Supabase
+  final int id;
   final String senderId;
   final String receiverId;
   final String text;
@@ -13,7 +13,6 @@ class Message {
     required this.createdAt,
   });
 
-  // Factory baru untuk membaca data dari Supabase
   factory Message.fromJson(Map<String, dynamic> json) {
     return Message(
       id: json['id'],
@@ -24,7 +23,6 @@ class Message {
     );
   }
 
-  // Helper untuk mengirim data ke Supabase
   Map<String, dynamic> toJsonForInsert() {
     return {
       'sender_id': senderId,
