@@ -25,63 +25,53 @@ Future<void> main() async {
 
   String initialRoute = AppRoutes.LOGIN;
 
-  // 0. Load environment variables FIRST
   await dotenv.load(fileName: ".env");
   debugPrint('[INIT] dotenv loaded');
 
-  // 1. Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   debugPrint('[INIT] Firebase initialized');
 
-  // Initialize date formatting for Indonesian locale
   await initializeDateFormatting('id_ID', null);
   debugPrint('[INIT] Date formatting initialized');
 
-  // 1. Inisialisasi Tema
   final themeController = Get.put(ThemeController());
   await themeController.initTheme();
   debugPrint('[INIT] Theme initialized');
 
-  // 2. Inisialisasi Supabase (CRITICAL - harus sukses)
   final supabaseService = await Get.putAsync(() => SupabaseService().init());
   debugPrint('[INIT] Supabase initialized');
 
-  // 3. Inisialisasi Hive/LocalStorage
   await Get.putAsync(() => LocalStorageService().init());
   debugPrint('[INIT] LocalStorage initialized');
 
-  // 4. Daftarkan service & controller lain
   Get.put(ApiService());
   Get.put(CartController());
   Get.lazyPut(() => ProductProvider());
   debugPrint('[INIT] Basic services registered');
-  
-  // 5. Inisialisasi Location Service (optional, wrap dengan try-catch)
+
   try {
     await Get.putAsync(() => LocationService().init());
     debugPrint('[INIT] Location service initialized');
   } catch (e) {
     debugPrint('[INIT] Location service failed: $e');
   }
-  
-  // 6. Inisialisasi Payment & Order Services (optional untuk web)
+
   try {
     await Get.putAsync(() => PaymentService().init());
     debugPrint('[INIT] Payment service initialized');
   } catch (e) {
     debugPrint('[INIT] Payment service failed: $e');
   }
-  
+
   try {
     await Get.putAsync(() => OrderService().init());
     debugPrint('[INIT] Order service initialized');
   } catch (e) {
     debugPrint('[INIT] Order service failed: $e');
   }
-  
-  // 7. Wishlist Service
+
   try {
     await Get.putAsync(() => WishlistService().init());
     debugPrint('[INIT] Wishlist service initialized');
@@ -89,19 +79,16 @@ Future<void> main() async {
     debugPrint('[INIT] Wishlist service failed: $e');
   }
 
-  // 8. Notification Service
   try {
     await Get.putAsync(() => NotificationService().init());
     debugPrint('[INIT] Notification service initialized');
   } catch (e) {
     debugPrint('[INIT] Notification service failed: $e');
   }
-  
-  // 9. AddressController - lazy init
+
   Get.lazyPut(() => AddressController());
   debugPrint('[INIT] AddressController registered (lazy)');
 
-  // --- LOGIKA AUTO-LOGIN ---
   final currentUser = supabaseService.currentUser;
 
   if (currentUser != null) {
@@ -130,7 +117,7 @@ Future<void> main() async {
 }
 
 class MyApp extends StatelessWidget {
-  final String initialRoute; // Terima initialRoute dari main
+  final String initialRoute;
 
   const MyApp({super.key, required this.initialRoute});
 
@@ -145,9 +132,7 @@ class MyApp extends StatelessWidget {
         themeMode: Get.find<ThemeController>().isDarkMode.value
             ? ThemeMode.dark
             : ThemeMode.light,
-        // --- GUNAKAN RUTE YANG DITENTUKAN ---
         initialRoute: initialRoute,
-        // ------------------------------------
         getPages: AppPages.routes,
         unknownRoute: GetPage(
           name: '/notfound',

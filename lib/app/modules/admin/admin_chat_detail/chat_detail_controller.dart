@@ -24,11 +24,14 @@ class AdminChatDetailController extends GetxController {
   void onInit() {
     super.onInit();
     final arg = Get.arguments;
-    if (arg is Profile) {
+
+    if (arg is Map<String, dynamic>) {
+      targetUser = Profile.fromJson(arg);
+    } else if (arg is Profile) {
       targetUser = arg;
     } else {
       Get.back();
-      Get.snackbar('Error', 'Gagal memuat data user.');
+      Get.snackbar('Error', 'Gagal memuat data user: Format data salah.');
       return;
     }
 

@@ -297,31 +297,16 @@ class AdminUserListController extends GetxController {
                         ? AppTheme.accentMustard
                         : AppTheme.lightPrimary)),
           ),
-          ElevatedButton.icon(
-            onPressed: () {
-              Get.back();
-              _confirmDeleteUser(user);
-            },
-            icon: const Icon(Icons.delete, size: 18),
-            label: const Text('HAPUS'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.accentRed,
-              foregroundColor: Colors.white,
-            ),
-          ),
         ],
       ),
     );
   }
 
   // Chat dengan user - navigasi ke halaman chat detail
+  // Di file user_list_controller.dart
   void chatWithUser(Map<String, dynamic> user) {
-    Get.toNamed(AppRoutes.ADMIN_CHAT_DETAIL, arguments: {
-      'recipientId': user['id'],
-      'recipientEmail': user['email'] ?? '',
-      'recipientName':
-          user['full_name'] ?? user['email']?.split('@')[0] ?? 'User',
-    });
+    // Kirim map user langsung sebagai argument
+    Get.toNamed(AppRoutes.ADMIN_CHAT_DETAIL, arguments: user);
   }
 
   Widget _buildStatItem(
@@ -604,92 +589,6 @@ class AdminUserListController extends GetxController {
       return '${date.day}/${date.month}/${date.year}';
     } catch (e) {
       return '-';
-    }
-  }
-
-  void _confirmDeleteUser(Map<String, dynamic> user) {
-    final isDark = Get.isDarkMode;
-
-    Get.dialog(
-      AlertDialog(
-        backgroundColor: isDark ? AppTheme.deepPurpleLight : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Icon(Icons.warning_amber_rounded,
-                color: AppTheme.accentRed, size: 28),
-            const SizedBox(width: 10),
-            Text('Hapus User',
-                style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87)),
-          ],
-        ),
-        content: Text(
-          'Yakin ingin menghapus akun "${user['email']}"?\n\nTindakan ini tidak dapat dibatalkan dan akan menghapus semua data user termasuk pesanan dan chat.',
-          style: GoogleFonts.poppins(
-              color: isDark ? Colors.white70 : Colors.grey[700]),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('BATAL',
-                style: TextStyle(color: isDark ? Colors.white70 : Colors.grey)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Get.back();
-              deleteUser(user['id']);
-            },
-            style:
-                ElevatedButton.styleFrom(backgroundColor: AppTheme.accentRed),
-            child: const Text('HAPUS', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> deleteUser(String userId) async {
-    try {
-      Get.dialog(
-        const Center(child: CircularProgressIndicator()),
-        barrierDismissible: false,
-      );
-
-      // Delete user's messages
-      await _supabase.client.from('messages').delete().eq('sender_id', userId);
-      await _supabase.client
-          .from('messages')
-          .delete()
-          .eq('receiver_id', userId);
-
-      // Delete user's orders
-      await _supabase.client.from('orders').delete().eq('user_id', userId);
-
-      // Delete user profile
-      await _supabase.client.from('profiles').delete().eq('id', userId);
-
-      Get.back(); // Close loading
-
-      users.removeWhere((u) => u['id'] == userId);
-
-      Get.snackbar(
-        'Berhasil',
-        'User berhasil dihapus',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-    } catch (e) {
-      Get.back(); // Close loading
-      Get.snackbar(
-        'Gagal',
-        'Error menghapus user: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
     }
   }
 }

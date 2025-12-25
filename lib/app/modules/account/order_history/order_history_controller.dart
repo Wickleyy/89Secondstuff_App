@@ -5,8 +5,10 @@ import 'package:_89_secondstufff/app/data/services/order_service.dart';
 
 class OrderHistoryController extends GetxController {
   final OrderService _orderService = Get.find<OrderService>();
-  
-  var orders = <Order>[].obs;
+
+  final RxList<Order> orders = <Order>[].obs;
+  final RxList<Order> filteredOrders = <Order>[].obs;
+
   var isLoading = false.obs;
   var isSyncing = false.obs; // For background sync indicator
   var selectedFilter = 'all'.obs;
@@ -30,16 +32,18 @@ class OrderHistoryController extends GetxController {
 
   Future<void> loadOrders() async {
     isLoading.value = true;
-    
+
     try {
       // 1. Load dari Hive cache dulu (instant, offline)
       final cachedOrders = _orderService.getCachedOrders();
       if (cachedOrders.isNotEmpty) {
         orders.assignAll(cachedOrders);
+        applyFilter(); // <-- WAJIB
         dataSource.value = 'cache';
         isLoading.value = false;
-        debugPrint('[OrderHistory] Loaded ${cachedOrders.length} orders from Hive cache');
-        
+        debugPrint(
+            '[OrderHistory] Loaded ${cachedOrders.length} orders from Hive cache');
+
         // 2. Background sync dari Supabase
         _syncFromServer();
       } else {
@@ -51,7 +55,7 @@ class OrderHistoryController extends GetxController {
       debugPrint('[OrderHistory] Error loading orders: $e');
       isLoading.value = false;
       Get.snackbar(
-        'Error', 
+        'Error',
         'Gagal memuat riwayat pesanan',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
@@ -64,6 +68,7 @@ class OrderHistoryController extends GetxController {
     try {
       final result = await _orderService.getUserOrders();
       orders.assignAll(result);
+      applyFilter();
       dataSource.value = 'server';
       debugPrint('[OrderHistory] Loaded ${result.length} orders from Supabase');
     } catch (e) {
@@ -77,12 +82,14 @@ class OrderHistoryController extends GetxController {
     isSyncing.value = true;
     try {
       final result = await _orderService.getUserOrders();
-      
+
       // Check if data changed
       if (result.length != orders.length) {
         orders.assignAll(result);
+        applyFilter();
         dataSource.value = 'server';
-        debugPrint('[OrderHistory] Synced ${result.length} orders from Supabase');
+        debugPrint(
+            '[OrderHistory] Synced ${result.length} orders from Supabase');
       }
     } catch (e) {
       debugPrint('[OrderHistory] Background sync failed: $e');
@@ -92,15 +99,21 @@ class OrderHistoryController extends GetxController {
     }
   }
 
-  List<Order> get filteredOrders {
+  void applyFilter() {
     if (selectedFilter.value == 'all') {
-      return orders;
+      filteredOrders.assignAll(orders);
+    } else {
+      filteredOrders.assignAll(
+        orders.where(
+          (o) => o.status.toLowerCase() == selectedFilter.value.toLowerCase(),
+        ),
+      );
     }
-    return orders.where((o) => o.status == selectedFilter.value).toList();
   }
 
   void setFilter(String filter) {
     selectedFilter.value = filter;
+    applyFilter();
   }
 
   Color getStatusColor(String status) {

@@ -328,11 +328,9 @@ class NotificationService extends GetxService {
     }
 
     switch (type) {
-      case 'winter_event':
-      case 'promo':
+      case 'event':
+      case 'promo_alert':
         Get.toNamed(AppRoutes.MAIN_NAVIGATION);
-        Get.snackbar("❄️ Winter Sale!", "Diskon dimulai!",
-            backgroundColor: Colors.blue[100], icon: Icon(Icons.ac_unit));
         break;
       case 'new_drop':
       case 'new_product':
